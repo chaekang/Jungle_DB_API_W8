@@ -1,0 +1,17 @@
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+Testing/
+Makefile
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+
+data/*.idx
+data/*.idx.boot
+
+benchmark-results/
+benchmark-datasets/
+
+jungle_mini_db
+mini_db

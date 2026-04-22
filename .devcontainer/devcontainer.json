@@ -1,0 +1,31 @@
+{
+  "name": "jungle-db-api-week8",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "runArgs": [
+    "--cap-add=SYS_PTRACE",
+    "--security-opt=seccomp=unconfined"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "cmake.configureOnOpen": true,
+        "cmake.generator": "Ninja",
+        "cmake.buildDirectory": "${workspaceFolder}/cmake-build-debug",
+        "cmake.sourceDirectory": "${workspaceFolder}",
+        "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-python.python"
+      ]
+    }
+  },
+  "postCreateCommand": "cmake -S . -B cmake-build-debug -G Ninja"
+}

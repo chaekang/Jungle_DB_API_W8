@@ -1,0 +1,7 @@
+.git
+cmake-build-*/
+build/
+benchmark-results/
+benchmark-datasets/
+data/*.idx
+data/*.idx.boot
