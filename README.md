@@ -23,6 +23,12 @@ flowchart LR
 
 ## 1. worker 스레드와 bounded queue 크기 설정
 
+
+<img width="1600" height="900" alt="01_mixed_worker_story" src="https://github.com/user-attachments/assets/a19c5932-eeda-41dc-956c-3ac860a60e0e" />
+
+<img width="1600" height="900" alt="02_read_vs_heavy_story" src="https://github.com/user-attachments/assets/7714bb51-2913-42fa-be3f-379dceac72a4" />
+
+
 ## 2. worker 스레드의 책임 범위
 
 ## 3. 중간 상태 노출 문제
