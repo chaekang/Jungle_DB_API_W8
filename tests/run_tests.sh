@@ -38,9 +38,35 @@ run_sql_test() {
     fi
 }
 
+run_sql_expect_failure_exit() {
+    local test_name=$1
+    local sql_file=$2
+    local expected=$3
+    local output
+
+    rm -rf data
+    mkdir -p data
+
+    output=$(./sql_processor "$sql_file" 2>&1)
+    local status=$?
+
+    if [ "$status" -ne 0 ] && echo "$output" | grep -q "$expected"; then
+        echo "[PASS] $test_name"
+        PASS=$((PASS + 1))
+    else
+        echo "[FAIL] $test_name"
+        echo "Expected non-zero exit and output containing: $expected"
+        echo "Actual exit: $status"
+        echo "Actual output:"
+        echo "$output"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
 for binary in build/tests/test_tokenizer build/tests/test_parser \
               build/tests/test_storage build/tests/test_benchmark build/tests/test_table_runtime \
-              build/tests/test_table_runtime_concurrency build/tests/test_engine_concurrency \
+              build/tests/test_table_runtime_concurrency build/tests/test_engine \
+              build/tests/test_engine_concurrency \
               build/tests/test_bptree build/tests/test_executor
 do
     run_unit_test "$binary"
@@ -53,6 +79,7 @@ run_sql_test "WHERE equals" "tests/test_cases/select_where.sql" "Bob"
 run_sql_test "Edge cases" "tests/test_cases/edge_cases.sql" "Lee, Jr."
 run_sql_test "Explicit id rejected" "tests/test_cases/duplicate_primary_key.sql" "Explicit id values are not allowed"
 run_sql_test "Delete unsupported" "tests/test_cases/delete_where.sql" "DELETE is not supported in memory runtime mode"
+run_sql_expect_failure_exit "File mode propagates statement failure" "tests/test_cases/file_mode_failure.sql" "Table 'missing_table' not found"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

@@ -10,6 +10,7 @@ typedef struct {
     char table_name[MAX_IDENTIFIER_LEN];
     int col_count;
     char columns[MAX_COLUMNS][MAX_IDENTIFIER_LEN];
+    ValueKind column_value_kinds[MAX_COLUMNS];
     char ***rows;
     int row_count;
     int capacity;
@@ -51,6 +52,7 @@ int table_linear_scan_by_field(const TableRuntime *table,
                                const WhereClause *where,
                                int **out_row_indices, int *out_count);
 void table_runtime_cleanup(void);
+const char *table_runtime_get_last_error(void);
 
 /*
  * 테스트용 registry entry 개수 조회 함수다.

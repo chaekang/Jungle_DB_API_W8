@@ -27,6 +27,9 @@ static void prepare_insert(InsertStatement *stmt, const char *table_name,
         snprintf(stmt->values[0], sizeof(stmt->values[0]), "%s", id);
         snprintf(stmt->values[1], sizeof(stmt->values[1]), "%s", name);
         snprintf(stmt->values[2], sizeof(stmt->values[2]), "%s", age);
+        stmt->value_kinds[0] = VALUE_KIND_INT;
+        stmt->value_kinds[1] = VALUE_KIND_STRING;
+        stmt->value_kinds[2] = VALUE_KIND_INT;
         return;
     }
 
@@ -35,14 +38,17 @@ static void prepare_insert(InsertStatement *stmt, const char *table_name,
     snprintf(stmt->columns[1], sizeof(stmt->columns[1]), "age");
     snprintf(stmt->values[0], sizeof(stmt->values[0]), "%s", name);
     snprintf(stmt->values[1], sizeof(stmt->values[1]), "%s", age);
+    stmt->value_kinds[0] = VALUE_KIND_STRING;
+    stmt->value_kinds[1] = VALUE_KIND_INT;
 }
 
 static void prepare_where(WhereClause *where, const char *column, const char *op,
-                          const char *value) {
+                          const char *value, ValueKind value_kind) {
     memset(where, 0, sizeof(*where));
     snprintf(where->column, sizeof(where->column), "%s", column);
     snprintf(where->op, sizeof(where->op), "%s", op);
     snprintf(where->value, sizeof(where->value), "%s", value);
+    where->value_kind = value_kind;
 }
 
 int main(void) {
@@ -110,7 +116,7 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
-    prepare_where(&where, "age", ">=", "30");
+    prepare_where(&where, "age", ">=", "30", VALUE_KIND_INT);
     if (assert_true(table_linear_scan_by_field(users_table, &where, &row_indices, &row_count) == SUCCESS,
                     "linear scan with WHERE should succeed") != SUCCESS ||
         assert_true(row_count == 1, "only one row should match age >= 30") != SUCCESS ||
@@ -192,6 +198,76 @@ int main(void) {
     }
 
     table_runtime_release(&other_handle);
+
+    if (assert_true(table_runtime_acquire("typed_codes", &users_handle) == SUCCESS,
+                    "typed_codes should be createable") != SUCCESS) {
+        return EXIT_FAILURE;
+    }
+
+    users_table = table_runtime_handle_table(&users_handle);
+    memset(&stmt, 0, sizeof(stmt));
+    snprintf(stmt.table_name, sizeof(stmt.table_name), "%s", "typed_codes");
+    stmt.column_count = 1;
+    snprintf(stmt.columns[0], sizeof(stmt.columns[0]), "%s", "code");
+    snprintf(stmt.values[0], sizeof(stmt.values[0]), "%s", "100");
+    stmt.value_kinds[0] = VALUE_KIND_STRING;
+    if (assert_true(table_insert_row(users_table, &stmt, &row_index) == SUCCESS,
+                    "string-looking numeric code insert should succeed") != SUCCESS) {
+        table_runtime_release(&users_handle);
+        return EXIT_FAILURE;
+    }
+
+    snprintf(stmt.values[0], sizeof(stmt.values[0]), "%s", "9");
+    if (assert_true(table_insert_row(users_table, &stmt, &row_index) == SUCCESS,
+                    "second string-looking numeric code insert should succeed") != SUCCESS) {
+        table_runtime_release(&users_handle);
+        return EXIT_FAILURE;
+    }
+
+    prepare_where(&where, "code", ">", "9", VALUE_KIND_STRING);
+    if (assert_true(table_linear_scan_by_field(users_table, &where, &row_indices, &row_count) ==
+                        SUCCESS,
+                    "string column comparison should succeed") != SUCCESS ||
+        assert_true(row_count == 0,
+                    "numeric-looking strings should not be compared as integers") != SUCCESS) {
+        free(row_indices);
+        table_runtime_release(&users_handle);
+        return EXIT_FAILURE;
+    }
+    free(row_indices);
+
+    prepare_where(&where, "code", "<", "9", VALUE_KIND_STRING);
+    if (assert_true(table_linear_scan_by_field(users_table, &where, &row_indices, &row_count) ==
+                        SUCCESS,
+                    "lexical string comparison should succeed") != SUCCESS ||
+        assert_true(row_count == 1 && row_indices[0] == 0,
+                    "string comparison should preserve lexical ordering") != SUCCESS) {
+        free(row_indices);
+        table_runtime_release(&users_handle);
+        return EXIT_FAILURE;
+    }
+    free(row_indices);
+    table_runtime_release(&users_handle);
+
+    if (assert_true(table_runtime_acquire("runtime_users", &users_handle) == SUCCESS,
+                    "runtime_users should still be available for overflow check") != SUCCESS) {
+        return EXIT_FAILURE;
+    }
+    users_table = table_runtime_handle_table(&users_handle);
+    prepare_where(&where, "age", ">", "999999999999999999999999", VALUE_KIND_INT);
+    if (assert_true(table_linear_scan_by_field(users_table, &where, &row_indices, &row_count) ==
+                        FAILURE,
+                    "overflowing integer filter should fail") != SUCCESS ||
+        assert_true(strstr(table_runtime_get_last_error(),
+                           "Invalid integer literal for numeric column.") != NULL,
+                    "overflow failure should report an integer literal error") != SUCCESS) {
+        free(row_indices);
+        table_runtime_release(&users_handle);
+        return EXIT_FAILURE;
+    }
+    free(row_indices);
+    table_runtime_release(&users_handle);
+
     table_runtime_cleanup();
     puts("[PASS] table_runtime");
     return EXIT_SUCCESS;

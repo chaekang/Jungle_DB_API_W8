@@ -5,6 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+static __thread char tokenizer_last_error[256] = "Failed to tokenize SQL.";
+
+static void tokenizer_set_error(const char *message) {
+    if (message == NULL) {
+        return;
+    }
+
+    utils_safe_strcpy(tokenizer_last_error, sizeof(tokenizer_last_error), message);
+}
+
 /*
  * 늘어나는 토큰 배열에 토큰 하나를 추가한다.
  * tokens에 정상 저장되면 SUCCESS를 반환한다.
@@ -21,14 +31,14 @@ static int tokenizer_append_token(Token **tokens, int *count, int *capacity,
         *capacity = INITIAL_TOKEN_CAPACITY;
         *tokens = (Token *)malloc((size_t)(*capacity) * sizeof(Token));
         if (*tokens == NULL) {
-            fprintf(stderr, "Error: Failed to allocate memory for tokens.\n");
+            tokenizer_set_error("Failed to allocate memory for tokens.");
             return FAILURE;
         }
     } else if (*count >= *capacity) {
         *capacity *= 2;
         new_tokens = (Token *)realloc(*tokens, (size_t)(*capacity) * sizeof(Token));
         if (new_tokens == NULL) {
-            fprintf(stderr, "Error: Failed to allocate memory for tokens.\n");
+            tokenizer_set_error("Failed to allocate memory for tokens.");
             return FAILURE;
         }
         *tokens = new_tokens;
@@ -37,7 +47,7 @@ static int tokenizer_append_token(Token **tokens, int *count, int *capacity,
     (*tokens)[*count].type = type;
     if (utils_safe_strcpy((*tokens)[*count].value, sizeof((*tokens)[*count].value),
                           value) != SUCCESS) {
-        fprintf(stderr, "Error: Token value is too long.\n");
+        tokenizer_set_error("Token value is too long.");
         return FAILURE;
     }
 
@@ -57,6 +67,7 @@ static int tokenizer_read_word(const char *sql, size_t *index, char *buffer,
     while (sql[*index] != '\0' &&
            (isalnum((unsigned char)sql[*index]) || sql[*index] == '_')) {
         if (length + 1 >= buffer_size) {
+            tokenizer_set_error("Identifier is too long.");
             return FAILURE;
         }
         buffer[length++] = sql[*index];
@@ -80,6 +91,7 @@ static int tokenizer_read_string(const char *sql, size_t *index, char *buffer,
         if (sql[*index] == '\'') {
             if (sql[*index + 1] == '\'') {
                 if (length + 1 >= buffer_size) {
+                    tokenizer_set_error("String literal is too long.");
                     return FAILURE;
                 }
                 buffer[length++] = '\'';
@@ -92,6 +104,7 @@ static int tokenizer_read_string(const char *sql, size_t *index, char *buffer,
         }
 
         if (length + 1 >= buffer_size) {
+            tokenizer_set_error("String literal is too long.");
             return FAILURE;
         }
 
@@ -99,6 +112,7 @@ static int tokenizer_read_string(const char *sql, size_t *index, char *buffer,
         (*index)++;
     }
 
+    tokenizer_set_error("Unterminated string literal.");
     return FAILURE;
 }
 
@@ -112,6 +126,7 @@ static int tokenizer_read_number(const char *sql, size_t *index, char *buffer,
     length = 0;
     if (sql[*index] == '-' || sql[*index] == '+') {
         if (length + 1 >= buffer_size) {
+            tokenizer_set_error("Integer literal is too long.");
             return FAILURE;
         }
         buffer[length++] = sql[*index];
@@ -120,6 +135,7 @@ static int tokenizer_read_number(const char *sql, size_t *index, char *buffer,
 
     while (isdigit((unsigned char)sql[*index])) {
         if (length + 1 >= buffer_size) {
+            tokenizer_set_error("Integer literal is too long.");
             return FAILURE;
         }
         buffer[length++] = sql[*index];
@@ -226,7 +242,6 @@ static Token *tokenizer_tokenize_sql(const char *sql, int *token_count) {
         if (sql[i] == '\'') {
             if (tokenizer_read_string(sql, &i, token_buffer,
                                         sizeof(token_buffer)) != SUCCESS) {
-                fprintf(stderr, "Error: Unterminated string literal.\n");
                 free(tokens);
                 return NULL;
             }
@@ -262,7 +277,6 @@ static Token *tokenizer_tokenize_sql(const char *sql, int *token_count) {
         if (tokenizer_is_numeric_start(sql, i)) {
             if (tokenizer_read_number(sql, &i, token_buffer,
                                         sizeof(token_buffer)) != SUCCESS) {
-                fprintf(stderr, "Error: Integer literal is too long.\n");
                 free(tokens);
                 return NULL;
             }
@@ -278,7 +292,6 @@ static Token *tokenizer_tokenize_sql(const char *sql, int *token_count) {
         if (isalpha((unsigned char)sql[i]) || sql[i] == '_') {
             if (tokenizer_read_word(sql, &i, token_buffer,
                                       sizeof(token_buffer)) != SUCCESS) {
-                fprintf(stderr, "Error: Identifier is too long.\n");
                 free(tokens);
                 return NULL;
             }
@@ -328,17 +341,21 @@ Token *tokenizer_tokenize(const char *sql, int *token_count) {
     int parsed_token_count;
 
     if (sql == NULL || token_count == NULL) {
+        tokenizer_set_error("SQL is empty.");
         return NULL;
     }
 
+    tokenizer_set_error("Failed to tokenize SQL.");
     *token_count = 0;
     working_sql = utils_strdup(sql);
     if (working_sql == NULL) {
+        tokenizer_set_error("Failed to allocate memory for SQL.");
         return NULL;
     }
 
     utils_trim(working_sql);
     if (working_sql[0] == '\0') {
+        tokenizer_set_error("SQL is empty.");
         free(working_sql);
         return NULL;
     }
@@ -402,4 +419,8 @@ const char *tokenizer_token_type_name(TokenType type) {
         default:
             return "UNKNOWN";
     }
+}
+
+const char *tokenizer_get_last_error(void) {
+    return tokenizer_last_error;
 }

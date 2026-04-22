@@ -247,7 +247,7 @@ static int executor_collect_all_rows(const TableRuntime *table,
     row_indices = NULL;
     row_count = 0;
     if (table_linear_scan_by_field(table, NULL, &row_indices, &row_count) != SUCCESS) {
-        return executor_fail(result, "Failed to scan table.");
+        return executor_fail(result, "%s", table_runtime_get_last_error());
     }
 
     status = executor_collect_rows_by_indices(table, selected_indices, selected_count,
@@ -281,7 +281,9 @@ static int executor_can_use_id_index(const TableRuntime *table,
         return 0;
     }
 
-    parsed_key = utils_parse_integer(where->value);
+    if (utils_try_parse_integer(where->value, &parsed_key) != SUCCESS) {
+        return 0;
+    }
     if (parsed_key < 0 || parsed_key > INT_MAX) {
         return 0;
     }
@@ -318,7 +320,7 @@ static int executor_collect_rows_by_scan(const TableRuntime *table,
     row_indices = NULL;
     row_count = 0;
     if (table_linear_scan_by_field(table, where, &row_indices, &row_count) != SUCCESS) {
-        return executor_fail(result, "Failed to scan table.");
+        return executor_fail(result, "%s", table_runtime_get_last_error());
     }
 
     status = executor_collect_rows_by_indices(table, selected_indices, selected_count,
@@ -357,8 +359,7 @@ static int executor_execute_insert(const InsertStatement *stmt,
     status = table_insert_row(table, stmt, &row_index);
     table_runtime_release(&handle);
     if (status != SUCCESS) {
-        return executor_fail(result, "Failed to insert row into '%s'.",
-                             stmt->table_name);
+        return executor_fail(result, "%s", table_runtime_get_last_error());
     }
 
     (void)row_index;

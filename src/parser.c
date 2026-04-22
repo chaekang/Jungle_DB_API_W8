@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+static __thread char parser_last_error[256] = "Failed to parse SQL.";
+
 /*
  * 토큰 하나가 기대한 타입과 선택적 문자열 값에 맞는지 확인한다.
  * 일치하면 1, 아니면 0을 반환한다.
@@ -28,7 +30,11 @@ static int parser_is_token(const Token *tokens, int token_count, int index,
  * 파서 오류 메시지 하나를 stderr로 출력한다.
  */
 static void parser_print_error(const char *message) {
-    fprintf(stderr, "Error: %s\n", message);
+    if (message == NULL) {
+        return;
+    }
+
+    utils_safe_strcpy(parser_last_error, sizeof(parser_last_error), message);
 }
 
 /*
@@ -71,7 +77,8 @@ static int parser_expect_identifier(const Token *tokens, int token_count,
  * 일치하면 SUCCESS, 아니면 FAILURE를 반환한다.
  */
 static int parser_expect_literal(const Token *tokens, int token_count,
-                                      int *index, char *dest, size_t dest_size) {
+                                      int *index, char *dest, size_t dest_size,
+                                      ValueKind *out_value_kind) {
     TokenType type;
 
     if (tokens == NULL || index == NULL || dest == NULL) {
@@ -94,6 +101,10 @@ static int parser_expect_literal(const Token *tokens, int token_count,
         return FAILURE;
     }
 
+    if (out_value_kind != NULL) {
+        *out_value_kind = type == TOKEN_INT_LITERAL ? VALUE_KIND_INT
+                                                    : VALUE_KIND_STRING;
+    }
     (*index)++;
     return SUCCESS;
 }
@@ -189,7 +200,8 @@ static int parser_parse_insert(const Token *tokens, int token_count,
 
         if (parser_expect_literal(tokens, token_count, &index,
                                        out->insert.values[value_count],
-                                       sizeof(out->insert.values[0])) != SUCCESS) {
+                                       sizeof(out->insert.values[0]),
+                                       &out->insert.value_kinds[value_count]) != SUCCESS) {
             return FAILURE;
         }
         value_count++;
@@ -275,7 +287,8 @@ static int parser_parse_where(const Token *tokens, int token_count, int *index,
 
     if (parser_expect_literal(tokens, token_count, index,
                                    where->value,
-                                   sizeof(where->value)) != SUCCESS) {
+                                   sizeof(where->value),
+                                   &where->value_kind) != SUCCESS) {
         return FAILURE;
     }
 
@@ -363,6 +376,8 @@ static int parser_parse_delete(const Token *tokens, int token_count,
  * out이 유효한 문장 구조체로 채워지면 SUCCESS를 반환한다.
  */
 int parser_parse(const Token *tokens, int token_count, SqlStatement *out) {
+    utils_safe_strcpy(parser_last_error, sizeof(parser_last_error),
+                      "Failed to parse SQL.");
     if (tokens == NULL || token_count <= 0 || out == NULL) {
         parser_print_error("Empty SQL statement.");
         return FAILURE;
@@ -382,4 +397,8 @@ int parser_parse(const Token *tokens, int token_count, SqlStatement *out) {
 
     parser_print_error("Unsupported SQL statement.");
     return FAILURE;
+}
+
+const char *parser_get_last_error(void) {
+    return parser_last_error;
 }

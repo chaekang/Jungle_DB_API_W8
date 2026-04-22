@@ -40,6 +40,9 @@ static void prepare_insert(SqlStatement *statement, const char *table_name,
         snprintf(statement->insert.values[0], sizeof(statement->insert.values[0]), "%s", id);
         snprintf(statement->insert.values[1], sizeof(statement->insert.values[1]), "%s", name);
         snprintf(statement->insert.values[2], sizeof(statement->insert.values[2]), "%s", age);
+        statement->insert.value_kinds[0] = VALUE_KIND_INT;
+        statement->insert.value_kinds[1] = VALUE_KIND_STRING;
+        statement->insert.value_kinds[2] = VALUE_KIND_INT;
         return;
     }
 
@@ -48,6 +51,8 @@ static void prepare_insert(SqlStatement *statement, const char *table_name,
     snprintf(statement->insert.columns[1], sizeof(statement->insert.columns[1]), "age");
     snprintf(statement->insert.values[0], sizeof(statement->insert.values[0]), "%s", name);
     snprintf(statement->insert.values[1], sizeof(statement->insert.values[1]), "%s", age);
+    statement->insert.value_kinds[0] = VALUE_KIND_STRING;
+    statement->insert.value_kinds[1] = VALUE_KIND_INT;
 }
 
 static void prepare_select(SqlStatement *statement, const char *table_name,
@@ -66,6 +71,8 @@ static void prepare_select(SqlStatement *statement, const char *table_name,
     snprintf(statement->select.where.op, sizeof(statement->select.where.op), "%s", op);
     snprintf(statement->select.where.value, sizeof(statement->select.where.value),
              "%s", value);
+    statement->select.where.value_kind = utils_is_integer(value) ? VALUE_KIND_INT
+                                                                 : VALUE_KIND_STRING;
 }
 
 static void prepare_delete(SqlStatement *statement, const char *table_name,

@@ -30,6 +30,8 @@ static void prepare_insert(InsertStatement *stmt, const char *table_name,
     snprintf(stmt->columns[1], sizeof(stmt->columns[1]), "age");
     snprintf(stmt->values[0], sizeof(stmt->values[0]), "%s", name);
     snprintf(stmt->values[1], sizeof(stmt->values[1]), "%s", age);
+    stmt->value_kinds[0] = VALUE_KIND_STRING;
+    stmt->value_kinds[1] = VALUE_KIND_INT;
 }
 
 static void *insert_rows_worker(void *arg) {

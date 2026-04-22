@@ -173,32 +173,65 @@ long long utils_parse_integer(const char *text) {
     return strtoll(text, NULL, 10);
 }
 
+int utils_try_parse_integer(const char *text, long long *out_value) {
+    char *end;
+    long long parsed_value;
+
+    if (text == NULL || out_value == NULL || !utils_is_integer(text)) {
+        return FAILURE;
+    }
+
+    errno = 0;
+    parsed_value = strtoll(text, &end, 10);
+    if (errno == ERANGE || end == text || *end != '\0') {
+        return FAILURE;
+    }
+
+    *out_value = parsed_value;
+    return SUCCESS;
+}
+
 /*
  * SQL 값 두 개를 비교한다.
  * 둘 다 정수면 숫자로 비교하고, 아니면 문자열로 비교한다.
  */
 int utils_compare_values(const char *lhs, const char *rhs) {
-    long long left_number;
-    long long right_number;
+    int comparison;
 
     if (lhs == NULL || rhs == NULL) {
         return 0;
     }
 
-    if (utils_is_integer(lhs) && utils_is_integer(rhs)) {
-        left_number = utils_parse_integer(lhs);
-        right_number = utils_parse_integer(rhs);
-
-        if (left_number < right_number) {
-            return -1;
-        }
-        if (left_number > right_number) {
-            return 1;
-        }
-        return 0;
+    if (utils_compare_integer_strings(lhs, rhs, &comparison) == SUCCESS) {
+        return comparison;
     }
 
     return strcmp(lhs, rhs);
+}
+
+int utils_compare_integer_strings(const char *lhs, const char *rhs,
+                                  int *out_comparison) {
+    long long left_number;
+    long long right_number;
+
+    if (lhs == NULL || rhs == NULL || out_comparison == NULL) {
+        return FAILURE;
+    }
+
+    if (utils_try_parse_integer(lhs, &left_number) != SUCCESS ||
+        utils_try_parse_integer(rhs, &right_number) != SUCCESS) {
+        return FAILURE;
+    }
+
+    if (left_number < right_number) {
+        *out_comparison = -1;
+    } else if (left_number > right_number) {
+        *out_comparison = 1;
+    } else {
+        *out_comparison = 0;
+    }
+
+    return SUCCESS;
 }
 
 /*

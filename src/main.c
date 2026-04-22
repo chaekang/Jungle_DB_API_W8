@@ -145,12 +145,14 @@ static int main_run_file_mode(const char *path) {
     int terminator_index;
     char *statement;
     char *remaining;
+    int overall_status;
 
     content = utils_read_file(path);
     if (content == NULL) {
         return FAILURE;
     }
 
+    overall_status = SUCCESS;
     start = 0;
     while (content[start] != '\0') {
         start = main_skip_whitespace(content, start);
@@ -168,6 +170,7 @@ static int main_run_file_mode(const char *path) {
             utils_trim(remaining);
             if (remaining[0] != '\0') {
                 fprintf(stderr, "Error: Missing semicolon at end of SQL statement.\n");
+                overall_status = FAILURE;
             }
             free(remaining);
             break;
@@ -180,13 +183,15 @@ static int main_run_file_mode(const char *path) {
             return FAILURE;
         }
 
-        main_process_sql_statement(statement);
+        if (main_process_sql_statement(statement) != SUCCESS) {
+            overall_status = FAILURE;
+        }
         free(statement);
         start = (size_t)terminator_index + 1;
     }
 
     free(content);
-    return SUCCESS;
+    return overall_status;
 }
 
 /*

@@ -9,17 +9,24 @@ typedef enum {
     SQL_DELETE
 } SqlType;
 
+typedef enum {
+    VALUE_KIND_INT,
+    VALUE_KIND_STRING
+} ValueKind;
+
 typedef struct {
     char table_name[MAX_IDENTIFIER_LEN];
     int column_count;
     char columns[MAX_COLUMNS][MAX_IDENTIFIER_LEN];
     char values[MAX_COLUMNS][MAX_VALUE_LEN];
+    ValueKind value_kinds[MAX_COLUMNS];
 } InsertStatement;
 
 typedef struct {
     char column[MAX_IDENTIFIER_LEN];
     char op[4];
     char value[MAX_VALUE_LEN];
+    ValueKind value_kind;
 } WhereClause;
 
 typedef struct {
@@ -50,5 +57,6 @@ typedef struct {
  * 성공 시 SUCCESS, 문법 오류 시 FAILURE를 반환한다.
  */
 int parser_parse(const Token *tokens, int token_count, SqlStatement *out);
+const char *parser_get_last_error(void);
 
 #endif

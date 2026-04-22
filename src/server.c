@@ -52,6 +52,12 @@ typedef enum {
     SERVER_READ_TOO_LARGE
 } ServerReadStatus;
 
+typedef enum {
+    SERVER_JSON_READ_OK,
+    SERVER_JSON_READ_INVALID,
+    SERVER_JSON_READ_TOO_LONG
+} ServerJsonReadStatus;
+
 static volatile sig_atomic_t server_stop_requested = 0;
 static int server_listener_fd = -1;
 
@@ -666,16 +672,16 @@ static void server_skip_json_space(const char **cursor, const char *end) {
 }
 
 // 추가구현: JSON 문자열 값 하나를 읽고 escape 문자를 간단히 처리한다.
-static int server_read_json_string(const char **cursor,
-                                   const char *end,
-                                   char *out,
-                                   size_t out_size) {
+static ServerJsonReadStatus server_read_json_string(const char **cursor,
+                                                    const char *end,
+                                                    char *out,
+                                                    size_t out_size) {
     const char *p;
     size_t length;
 
     if (cursor == NULL || *cursor == NULL || out == NULL || out_size == 0 ||
         *cursor >= end || **cursor != '"') {
-        return FAILURE;
+        return SERVER_JSON_READ_INVALID;
     }
 
     p = *cursor + 1;
@@ -686,12 +692,12 @@ static int server_read_json_string(const char **cursor,
         if (ch == '"') {
             out[length] = '\0';
             *cursor = p;
-            return SUCCESS;
+            return SERVER_JSON_READ_OK;
         }
 
         if (ch == '\\') {
             if (p >= end) {
-                return FAILURE;
+                return SERVER_JSON_READ_INVALID;
             }
 
             ch = *p++;
@@ -703,7 +709,7 @@ static int server_read_json_string(const char **cursor,
                 ch = '\t';
             } else if (ch == 'u') {
                 if (end - p < 4) {
-                    return FAILURE;
+                    return SERVER_JSON_READ_INVALID;
                 }
                 p += 4;
                 ch = '?';
@@ -711,29 +717,30 @@ static int server_read_json_string(const char **cursor,
         }
 
         if (length + 1 >= out_size) {
-            return FAILURE;
+            return SERVER_JSON_READ_TOO_LONG;
         }
 
         out[length++] = ch;
     }
 
-    return FAILURE;
+    return SERVER_JSON_READ_INVALID;
 }
 
 /*
  * 요청 body에서 {"sql":"..."} 형태의 sql 문자열만 꺼낸다.
  * SQL 해석은 여기서 하지 않고 engine_execute_sql()에 그대로 넘긴다.
  */
-static int server_extract_sql_from_json(const char *body,
-                                        size_t body_length,
-                                        char *out_sql,
-                                        size_t out_sql_size) {
+static ServerJsonReadStatus server_extract_sql_from_json(const char *body,
+                                                         size_t body_length,
+                                                         char *out_sql,
+                                                         size_t out_sql_size) {
     const char *cursor;
     const char *end;
     char key[64];
+    ServerJsonReadStatus read_status;
 
     if (body == NULL || out_sql == NULL || out_sql_size == 0) {
-        return FAILURE;
+        return SERVER_JSON_READ_INVALID;
     }
 
     cursor = body;
@@ -746,8 +753,9 @@ static int server_extract_sql_from_json(const char *body,
             break;
         }
 
-        if (server_read_json_string(&cursor, end, key, sizeof(key)) != SUCCESS) {
-            return FAILURE;
+        read_status = server_read_json_string(&cursor, end, key, sizeof(key));
+        if (read_status != SERVER_JSON_READ_OK) {
+            return read_status;
         }
         server_skip_json_space(&cursor, end);
         if (cursor >= end || *cursor != ':') {
@@ -761,7 +769,7 @@ static int server_extract_sql_from_json(const char *body,
         }
     }
 
-    return FAILURE;
+    return SERVER_JSON_READ_INVALID;
 }
 
 /*
@@ -814,6 +822,7 @@ static void server_handle_client(int client_fd) {
     size_t body_offset;
     size_t body_length;
     ServerReadStatus read_status;
+    ServerJsonReadStatus json_status;
     QueryResult result;
     char *body;
     int status_code;
@@ -853,9 +862,20 @@ static void server_handle_client(int client_fd) {
         return;
     }
 
-    if (body_length == 0 ||
-        server_extract_sql_from_json(request_buffer + body_offset, body_length,
-                                     sql, sizeof(sql)) != SUCCESS) {
+    if (body_length == 0) {
+        server_send_json_error(client_fd, 400, "Bad Request",
+                               "JSON body must contain a string field named sql.");
+        return;
+    }
+
+    json_status = server_extract_sql_from_json(request_buffer + body_offset,
+                                               body_length, sql, sizeof(sql));
+    if (json_status == SERVER_JSON_READ_TOO_LONG) {
+        server_send_json_error(client_fd, 413, "Payload Too Large",
+                               "SQL string is too long.");
+        return;
+    }
+    if (json_status != SERVER_JSON_READ_OK) {
         server_send_json_error(client_fd, 400, "Bad Request",
                                "JSON body must contain a string field named sql.");
         return;

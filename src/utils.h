@@ -62,6 +62,7 @@ int utils_is_integer(const char *text);
  * 호출 전 utils_is_integer()로 검증하는 것을 전제로 한다.
  */
 long long utils_parse_integer(const char *text);
+int utils_try_parse_integer(const char *text, long long *out_value);
 
 /*
  * SQL 리터럴 두 개를 비교한다.
@@ -69,6 +70,8 @@ long long utils_parse_integer(const char *text);
  * 반환값은 strcmp처럼 음수, 0, 양수 중 하나다.
  */
 int utils_compare_values(const char *lhs, const char *rhs);
+int utils_compare_integer_strings(const char *lhs, const char *rhs,
+                                  int *out_comparison);
 
 /*
  * 텍스트 파일 전체를 메모리로 읽어온다.

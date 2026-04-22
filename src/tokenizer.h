@@ -27,6 +27,7 @@ typedef struct {
  * 반환된 메모리는 호출자가 free()로 해제해야 한다.
  */
 Token *tokenizer_tokenize(const char *sql, int *token_count);
+const char *tokenizer_get_last_error(void);
 
 /*
  * 이전 캐시 API와의 호환성을 위한 no-op이다.

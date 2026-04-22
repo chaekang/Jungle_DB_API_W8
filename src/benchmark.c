@@ -160,6 +160,8 @@ static void benchmark_prepare_insert_stmt(InsertStatement *stmt)
     stmt->column_count = 2;
     snprintf(stmt->columns[0], sizeof(stmt->columns[0]), "name");
     snprintf(stmt->columns[1], sizeof(stmt->columns[1]), "age");
+    stmt->value_kinds[0] = VALUE_KIND_STRING;
+    stmt->value_kinds[1] = VALUE_KIND_INT;
 }
 
 /*
