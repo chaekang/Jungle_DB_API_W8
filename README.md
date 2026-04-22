@@ -30,7 +30,9 @@ flowchart LR
 
 
 ## 2. worker 스레드의 책임 범위
-<img width="6071" height="637" alt="Worker Queue Processing-2026-04-22-160537" src="https://github.com/user-attachments/assets/d79724f1-9018-40cb-8836-3e3493d0cefa" />
+<img width="1400" height="360" alt="worker_cycle_compact" src="https://github.com/user-attachments/assets/1445120b-54e4-4afd-ba74-cb40e67237f9" />
+
+
 
 ## 3. 중간 상태 노출 문제
 <img width="1672" height="941" alt="image" src="https://github.com/user-attachments/assets/daeefd9a-0e23-428c-9e5c-fbfc545551fc" />
