@@ -1,120 +1,209 @@
-# B+Tree 기반 ID 인덱스를 연동한 SQL Processor
+# 멀티스레드 SQL API 서버 설계 기록
 
-## 1. 프로젝트 한 줄 소개
-**이 프로젝트는 기존 SQL 처리기에 B+Tree 기반 인덱스를 실제로 연결해 `WHERE id = ?` 조회 성능을 개선한 구현이다.**
+이 프로젝트는 C로 구현한 멀티스레드 SQL API 서버입니다.  
+이번 README는 기능 소개보다, 설계 과정에서 실제로 오래 고민했던 두 가지 질문에 답하는 문서로 다시 정리했습니다.
 
-핵심은 자료구조만 따로 만든 것이 아니라, `INSERT`와 `SELECT` 실행 경로 안에 인덱스를 통합했다는 점이다.  
-즉, SQL을 파싱하고 실행하는 전체 흐름 속에서 인덱스가 실제로 동작하도록 만든 프로젝트다.
+우리가 집중했던 질문은 아래 두 가지였습니다.
 
-## 2. 성능 비교 결과
-인덱스 유지 비용 때문에 삽입은 느려졌지만, `WHERE id = ?` 같은 조건에서 조회 성능은 크게 개선되었다.  
+1. `worker thread` 수와 `bounded queue` 크기를 어떻게 정할 것인가
+2. `worker thread`가 요청 처리의 어디까지 책임질 것인가
 
-<img width="1475" height="1155" alt="스크린샷 2026-04-16 오전 1 52 37" src="https://github.com/user-attachments/assets/53b942c2-affa-4177-9e70-da3359548941" />
+## 프로젝트 한눈에 보기
 
+- 메인 스레드는 연결을 받고 `bounded queue`에 넣습니다.
+- 워커 스레드는 큐에서 요청을 꺼내 HTTP 파싱, SQL 실행, 응답 전송까지 끝까지 처리합니다.
+- 큐가 가득 차면 요청을 오래 붙잡지 않고 `503 Service Unavailable`로 빠르게 실패시킵니다.
+- 저장 엔진은 테이블 단위 `pthread_rwlock_t`를 사용해 동시성을 제어합니다.
 
-
-## 3. 프로젝트 구조
-발표에서 중요한 파일만 역할 중심으로 정리하면 아래와 같다.
-
-```text
-week7_index/
-├── src/
-│   ├── main.c            # 프로그램 진입점, REPL / 파일 입력 / benchmark 모드 분기
-│   ├── tokenizer.c/h     # SQL 문자열을 토큰 단위로 분해
-│   ├── parser.c/h        # 토큰을 SqlStatement 구조로 변환
-│   ├── executor.c/h      # 문장 종류를 판별하고 인덱스 사용 여부를 결정
-│   ├── table_runtime.c/h # 메모리 기반 테이블, auto increment id, row 저장, 선형 탐색
-│   ├── bptree.c/h        # id -> row_index를 저장하는 B+Tree 인덱스
-│   ├── benchmark.c/h     # 삽입과 조회 시나리오의 성능 측정
-│   ├── storage.c/h       # 기존 CSV 저장 계층
-│   ├── index.c/h         # 기존 보조 인덱스 실험 모듈
-│   └── utils.c/h         # 공통 문자열 / 비교 / 출력 유틸리티
-├── tests/
-│   ├── test_bptree.c         # split 이후 검색 정확성 검증
-│   ├── test_table_runtime.c  # auto id, row 저장, 선형 탐색 검증
-│   ├── test_executor.c       # INSERT / SELECT / WHERE id 실행 경로 검증
-│   ├── test_benchmark.c      # benchmark smoke test
-│   ├── test_storage.c        # 기존 storage 계층 검증
-│   └── test_cases/*.sql      # 실제 SQL 입력 시나리오 테스트
-├── Makefile              # 빌드와 테스트 진입점
-└── README.md             # 발표용 기술 설명 문서
-```
-
-이 구조의 핵심은 `tokenizer -> parser -> executor` 흐름은 유지하되, 실제 조회 최적화는 `table_runtime`과 `bptree`가 담당한다는 점이다.
-
-## 4. 전체 동작 흐름
-### 4-1. 전체 SQL 처리 흐름
 ```mermaid
-flowchart TD
-    A["SQL 입력"] --> B["Tokenizer"]
-    B --> C["Parser"]
-    C --> D["SqlStatement 생성"]
-    D --> E["Executor"]
-    E --> F{"문장 종류 / WHERE 조건 분석"}
-    F -->|INSERT| G["TableRuntime에 row 저장"]
-    G --> H["B+Tree에 (id -> row_index) 반영"]
-    F -->|SELECT + WHERE id = ?| I["B+Tree index lookup"]
-    I --> J["row_index 획득"]
-    J --> K["TableRuntime에서 row 조회"]
-    F -->|SELECT + 그 외 조건| L["TableRuntime linear scan"]
-    K --> M["결과 반환"]
-    L --> M
+flowchart LR
+    A["client"] --> B["accept (main thread)"]
+    B --> C{"queue full?"}
+    C -->|yes| D["503 response"]
+    C -->|no| E["bounded queue"]
+    E --> F["worker thread"]
+    F --> G["HTTP parse"]
+    G --> H["SQL execute"]
+    H --> I["send response"]
 ```
 
-현재 프로젝트는 `Executor`가 조건을 보고 경로를 나눈다.  
-`WHERE id = ?` 이면 B+Tree를 사용하고, 그 외 필드는 메모리 테이블을 선형 탐색한다.
+## 핵심 결론
 
-### 4-2. INSERT / SELECT 시 인덱스 반영 흐름
-```mermaid
-flowchart TD
-    A["INSERT 실행"] --> B["auto increment id 발급"]
-    B --> C["TableRuntime rows에 저장"]
-    C --> D["B+Tree에 (id -> row_index) 삽입"]
+- `worker` 수는 많을수록 좋은 것이 아니라, workload 특성에 맞는 적정값이 중요했습니다.
+- `read-heavy` 환경에서는 worker를 늘려도 큰 차이가 없었습니다.
+- `SELECT + INSERT`가 섞인 `mixed` 환경에서는 `workers=4`가 가장 안정적이었고, `workers=8`은 오히려 지연과 실패가 늘었습니다.
+- 요청 하나를 더 무겁게 만들면 multi-worker 효과가 분명하게 나타났습니다.
+- `bounded queue`는 너무 작으면 burst를 버티지 못하고, 너무 크면 늦게 실패하는 서버가 됩니다.
+- 초기 실험에서는 `queue=48`이 좋아 보였지만, 요청 처리 시간을 더 키운 실험까지 포함하면 `queue=64` 쪽이 더 안정적이었습니다.
+- 따라서 현재 설계 판단은 `queue=64`를 기본 후보로 두고, 매우 가벼운 workload에서는 `queue=48`도 사용할 수 있다는 것입니다.
+- 구현 복잡도와 과제 범위를 고려해, 워커 하나가 요청 하나를 끝까지 처리하는 구조를 선택했습니다.
 
-    E["SELECT ... WHERE id = ?"] --> F["root부터 leaf까지 탐색"]
-    F --> G["leaf에서 row_index 획득"]
-    G --> H["TableRuntime에서 실제 row 조회"]
-    H --> I["Projection 후 결과 반환"]
+## 1. 왜 worker 수를 실험으로 정했는가
+
+처음에는 worker를 많이 두면 무조건 유리할 것처럼 보였습니다. 하지만 실제로는 요청의 종류에 따라 결과가 달랐습니다.
+
+### 1-1. Read-heavy workload
+
+단순 조회가 많은 경우에는 worker 수를 늘려도 성능 차이가 크지 않았습니다.  
+현재 조회 경로가 이미 가볍기 때문에, worker를 더 늘려도 처리량이 크게 오르지 않았습니다.
+
+해석은 명확했습니다.
+
+- 이 구간에서는 병렬성보다 요청 자체가 충분히 가벼운 것이 더 큰 요인이었습니다.
+- multi-worker의 효과가 완전히 없는 것은 아니지만, throughput을 크게 끌어올릴 정도는 아니었습니다.
+
+### 1-2. Mixed workload
+
+조회와 저장이 함께 섞인 경우에는 결과가 달랐습니다.
+
+- `workers=4`에서 throughput, p95, `503` 수가 가장 안정적이었습니다.
+- `workers=8`까지 늘리면 오히려 lock contention, context switching, queue 대기가 커지면서 성능이 나빠졌습니다.
+
+즉, worker를 늘리는 것이 항상 병렬성 증가로 이어지지는 않았고, 공유 자원 경쟁이 있는 workload에서는 오히려 독이 될 수 있었습니다.
+
+### 1-3. 요청을 더 무겁게 만들었을 때
+
+추가 실험으로 요청 하나에 더 많은 작업 시간을 넣어 보니, 그때는 multi-worker 효과가 확실히 드러났습니다.
+
+이 결과는 중요한 메시지를 줬습니다.
+
+- 기존 read path가 평평하게 보였던 이유는 multi-worker가 쓸모없어서가 아니라, 원래 작업이 너무 가벼웠기 때문입니다.
+- 작업이 무거워질수록 worker 수의 의미가 커집니다.
+
+### 1-4. worker 수에 대한 최종 판단
+
+우리의 결론은 단순합니다.
+
+- worker 수에는 모든 상황에 맞는 하나의 정답이 없습니다.
+- 가벼운 조회 위주라면 worker를 많이 늘려도 이득이 제한적입니다.
+- 읽기와 쓰기가 섞여 lock 경쟁이 생기는 workload에서는 sweet spot을 찾는 것이 중요합니다.
+- 이번 실험 범위에서는 `mixed` workload 기준 `workers=4`가 가장 설득력 있는 선택이었습니다.
+
+참고 문서:
+
+- `docs/worker_benchmark_comparison.md`
+- `docs/mixed_p95_presentation_note.md`
+
+## 2. 왜 bounded queue 크기를 다시 실험했는가
+
+queue 크기는 단순히 "클수록 좋다"로 결정할 수 없었습니다.
+
+- 너무 작으면 짧은 burst도 흡수하지 못하고 바로 `503`이 늘어납니다.
+- 너무 크면 실패는 줄어들 수 있어도, queue wait가 길어져 응답이 느려집니다.
+
+즉, queue는 실패 수와 지연 시간 사이의 균형 문제였습니다.
+
+### 2-1. 초기 관찰
+
+처음 sweep에서는 `queue=48`이 가장 좋아 보였습니다.
+
+- 작은 큐보다 `503`을 줄였고
+- 너무 큰 큐처럼 tail latency를 크게 키우지도 않았기 때문입니다.
+
+### 2-2. 추가 실험 후 판단 변화
+
+하지만 요청 처리에 시간이 조금 더 걸리는 상황을 넣어 다시 보니, 결과 중심이 `48`에서 `64` 쪽으로 이동했습니다.
+
+이 변화가 의미하는 바는 아래와 같습니다.
+
+- baseline이 너무 가벼우면 queue 차이가 작게 보일 수 있습니다.
+- workload가 조금만 무거워져도 queue가 더 많은 버퍼 역할을 해야 합니다.
+- 그래서 실서비스에 가까운 보수적 선택은 `64`가 더 적절하다고 판단했습니다.
+
+### 2-3. queue 크기에 대한 최종 판단
+
+- 기본 권장값: `queue=64`
+- 매우 가벼운 workload에서 고려 가능한 값: `queue=48`
+- 피해야 할 방향:
+  - 너무 작은 큐: burst에서 빠르게 `503` 증가
+  - 너무 큰 큐: 응답을 오래 밀어두는 "늦게 실패하는 서버"
+
+참고 문서:
+
+- `docs/queue_size_experiment_results_20260422.md`
+- `docs/queue_size_simulated_work_results_20260422.md`
+
+## 3. 왜 worker가 요청을 끝까지 처리하게 했는가
+
+두 번째로 오래 고민한 부분은 worker의 책임 범위였습니다.
+
+선택지는 크게 두 가지였습니다.
+
+1. 워커가 요청을 큐에서 꺼낸 뒤 HTTP 파싱, SQL 실행, 응답 전송까지 모두 처리한다.
+2. HTTP 파싱, SQL 실행, 응답 전송을 별도의 스레드 단계로 분리한다.
+
+우리는 첫 번째 구조를 선택했습니다.
+
+### 이유
+
+- 요청 처리 흐름이 단순합니다.
+- `fd`와 메모리 소유권을 한 워커 안에서 관리할 수 있어 구현이 훨씬 명확합니다.
+- 응답 전송을 별도 스레드로 분리하면 추가 큐, 추가 동기화, 추가 상태 전달이 필요합니다.
+- 이번 과제 범위에서는 그 복잡도가 얻는 이익보다 더 컸습니다.
+
+### 감수한 trade-off
+
+- 느린 클라이언트가 있으면 worker가 잠시 묶일 수 있습니다.
+
+하지만 이번 프로젝트에서는 아래 조건 때문에 이 단점을 감수할 수 있다고 판단했습니다.
+
+- 응답 body가 크지 않습니다.
+- DB lock은 응답 전송 전에 해제됩니다.
+- 과제 범위에서는 구조 단순성이 유지보수성과 설명 가능성 면에서 더 중요했습니다.
+
+정리하면, 우리는 "이론적으로 더 세분화된 구조"보다 "현재 범위에서 더 단순하고 명확한 구조"를 택했습니다.
+
+## 4. 현재 코드와 README의 관계
+
+이 README는 실험을 통해 도출한 설계 판단을 중심으로 정리한 문서입니다.  
+현재 코드에는 실험 이전 기본 상수가 일부 남아 있을 수 있습니다. 예를 들어 `src/server.c`에는 현재 아래 상수가 정의되어 있습니다.
+
+- `SERVER_WORKER_COUNT = 8`
+- `SERVER_QUEUE_CAPACITY = 32`
+
+즉, README는 "왜 이런 값이 합리적인가"에 대한 최종 설계 설명이고, 실제 상수 반영 여부는 코드 변경과 함께 맞춰가면 됩니다.
+
+## 5. 실행 방법
+
+### 빌드
+
+```bash
+make
 ```
 
-즉 `INSERT`는 데이터 저장과 인덱스 반영이 함께 일어나고,  
-`SELECT WHERE id = ?` 는 트리 탐색으로 위치를 찾은 뒤 해당 row를 바로 읽어오는 방식으로 동작한다.
+### 테스트
 
-## 5. 인덱스가 필요한 이유
- 
-| 경우 | 특징 |
-| --- | --- |
-| 인덱스 없는 경우 | 삽입은 단순하지만, 조회 시 모든 레코드를 처음부터 끝까지 확인해야 한다 |
-| 인덱스 있는 경우 | 삽입은 조금 느려지지만, `WHERE id = ?` 조회는 매우 빠르게 처리된다 |
+```bash
+make tests
+```
 
-인덱스는 "조회 시간을 줄이기 위해 삽입 시 추가 비용을 감수하는 구조"라고 볼 수 있다.
+### 서버 실행 예시
 
-## 6. 인덱스의 구현으로 B+Tree를 선택한 이유
+```bash
+./sql_processor --server 8080
+```
 
-- 배열이나 선형 탐색은 구현은 단순하지만 데이터가 많아질수록 조회가 느리다.
-- 단순 BST는 균형이 깨지면 성능이 불안정해질 수 있다.
-- 해시 인덱스는 정확한 검색에는 강하지만 범위 조회에는 불리하다.
-- B+Tree key를 정렬된 상태로 유지할 수 있어 exact search와 range search 모두에 유리하다.
+실험 스크립트와 결과 정리 도구는 아래 경로에 있습니다.
 
-- B+Tree는 검색 속도와 정렬 구조를 함께 가져갈 수 있어 데이터베이스 인덱스에 적합하다.
-- B+Tree는 실제 데이터베이스 인덱스 구조로 널리 사용된다.
+- `scripts/run_queue_experiment.sh`
+- `scripts/run_queue_clean_campaign.py`
+- `scripts/run_queue_simwork_campaign.py`
+- `scripts/summarize_queue_results.py`
+- `scripts/summarize_queue_simwork_results.py`
 
-## 7. B+Tree의 핵심 특징
-B+Tree의 핵심은 내부 노드와 리프 노드의 역할이 분리된다는 점이다.
-<img width="2048" height="2348" alt="IMG_7AF5A249CF24-1" src="https://github.com/user-attachments/assets/02491ee1-a51b-4a99-881a-38f2391c9e1b" />
+## 6. 저장소에서 보면 좋은 파일
 
+- `src/server.c`: accept, bounded queue, worker thread, overload 처리의 핵심 구현
+- `src/table_runtime.c`: 테이블 단위 `pthread_rwlock_t` 기반 동시성 제어
+- `docs/worker_benchmark_comparison.md`: worker 수 비교 실험 정리
+- `docs/queue_size_experiment_results_20260422.md`: queue 크기 실험 결과
+- `docs/queue_size_simulated_work_results_20260422.md`: simulated work를 추가한 queue 실험 결과
 
+## 마무리
 
+이번 프로젝트에서 가장 중요했던 배움은 두 가지였습니다.
 
-## 8. 테스트 및 검증
-이 프로젝트는 단순 동작 확인이 아니라, 단위 테스트와 기능 테스트를 나눠 검증했다.
+- 서버 설정값은 감으로 정하는 것이 아니라 workload를 기준으로 실험해 정해야 한다.
+- 더 복잡한 구조가 항상 더 좋은 구조는 아니며, 현재 범위에서 설명 가능하고 유지 가능한 단순함이 더 중요할 수 있다.
 
-- 단위 테스트: `test_bptree`, `test_table_runtime`, `test_executor`, `test_storage`, `test_benchmark`로 핵심 모듈을 검증했다.
-- 기능 테스트: `tests/test_cases/*.sql`로 기본 `INSERT`, 기본 `SELECT`, `WHERE id`, 일반 `WHERE` 시나리오를 확인했다.
-- edge case 검증: explicit id 삽입 거부, `DELETE` 비지원, 특수 문자열 입력 같은 예외 상황을 점검했다.
-- split 검증: leaf split과 internal split 이후에도 검색 결과가 유지되는지 테스트했다.
-- 성능 테스트: benchmark 모듈로 삽입과 조회 시나리오를 반복 실행해 성능 차이를 확인했다.
-
-발표에서는 다음처럼 정리하면 자연스럽다.  
-"구현이 단순히 돌아가기만 하는지 본 것이 아니라, split 이후 검색 정확성, 인덱스 분기, 예외 처리, 성능 측정까지 나눠 검증했다."
-
+그래서 우리는 `worker/queue`를 실험으로 조정했고, 최종적으로는 워커 하나가 요청 하나를 끝까지 책임지는 단순한 구조를 선택했습니다.
