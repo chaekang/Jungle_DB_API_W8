@@ -127,24 +127,27 @@
 ## 6. API 모양을 정할 때 던질 질문
 
 - API는 REST처럼 보이게 만들 것인가, SQL gateway처럼 만들 것인가?
+
+  - REST 스타일 API는 자원 중심의 endpoint를 정의하여 외부에 일반적인 웹 API처럼 보이게 만드는 방식이고, SQL gateway 스타일 API는 SQL 문자열 자체를 요청으로 받아 내부 SQL 처리기에 전달하는 방식이다. 전자는 외부 인터페이스가 직관적이지만, 기존 SQL 처리기의 재사용성이 떨어지고 endpoint 설계가 복잡해질 수 있다. 반면 후자는 POST /query 같은 단일 endpoint만으로 기존 SQL 엔진을 직접 활용할 수 있어 구현이 단순하다.
 - 가장 단순한 요청/응답 포맷은 무엇인가?
-- `POST /query` 하나로 처리하면 기존 SQL 처리기를 가장 쉽게 재사용할 수 있는가?
-- 기능별 endpoint로 나누면 무엇이 좋아지고, 무엇이 복잡해지는가?
-- 요청 body는 어떤 형식으로 받을 것인가?
+  - 가장 단순한 요청/응답 포맷은, 요청에서 실행할 SQL 문자열을 명시적으로 전달하고 응답에서 성공 여부와 실행 결과를 구조적으로 반환할 수 있는 형태여야 한다. 이를 위해 요청은 JSON body로 { "sql": "..." } 형식을 사용하고, 응답 역시 JSON으로 success, rows, error 등의 필드를 포함하도록 설계하는 것이 가장 단순하고 실용적이다. 이 방식은 기존 SQL 처리기에 쉽게 연결할 수 있고, 클라이언트 측에서도 성공/실패 분기와 결과 처리가 명확하다는 장점이 있다.
 
-예시:
-
-```json
-{ "sql": "SELECT * FROM users WHERE id = 1;" }
-```
-
-- 응답은 어떤 형식으로 줄 것인가?
-  - success
-  - rows
-  - error
-  - execution time
-  - index used 여부
-
+        요청
+      {
+        "sql": "SELECT * FROM users WHERE id = 1;"
+      }
+      성공 응답
+      {
+        "success": true,
+        "rows": [
+          { "id": 1, "name": "Alice" }
+        ]
+      }
+      실패 응답
+      {
+        "success": false,
+        "error": "syntax error near FROM"
+      }
 ---
 
 ---
