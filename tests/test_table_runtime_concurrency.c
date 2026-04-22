@@ -4,14 +4,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define INSERT_COUNT 1000
+#define HOLD_USEC 200000
 
 typedef struct {
     const char *table_name;
     const char *name_prefix;
     int start_age;
 } InsertThreadArgs;
+
+typedef struct {
+    const char *table_name;
+    volatile int acquired;
+    volatile int released;
+} ReadHoldArgs;
+
+typedef struct {
+    const char *table_name;
+    volatile int finished;
+    volatile int succeeded;
+} WriteAttemptArgs;
 
 static int assert_true(int condition, const char *message) {
     if (!condition) {
@@ -46,11 +60,12 @@ static void *insert_rows_worker(void *arg) {
         int row_index;
 
         handle.entry = NULL;
+        handle.lock_mode = TABLE_RUNTIME_LOCK_NONE;
         snprintf(name, sizeof(name), "%s_%d", args->name_prefix, i);
         snprintf(age, sizeof(age), "%d", args->start_age + (i % 50));
         prepare_insert(&stmt, args->table_name, name, age);
 
-        if (table_runtime_acquire(args->table_name, &handle) != SUCCESS) {
+        if (table_runtime_acquire_write(args->table_name, &handle) != SUCCESS) {
             return (void *)1;
         }
 
@@ -66,23 +81,128 @@ static void *insert_rows_worker(void *arg) {
     return NULL;
 }
 
+static void *read_hold_worker(void *arg) {
+    ReadHoldArgs *args;
+    TableRuntimeHandle handle;
+
+    args = (ReadHoldArgs *)arg;
+    handle.entry = NULL;
+    handle.lock_mode = TABLE_RUNTIME_LOCK_NONE;
+    if (table_runtime_acquire_read(args->table_name, &handle) != SUCCESS) {
+        return (void *)1;
+    }
+
+    args->acquired = 1;
+    usleep(HOLD_USEC);
+    table_runtime_release(&handle);
+    args->released = 1;
+    return NULL;
+}
+
+static void *write_attempt_worker(void *arg) {
+    WriteAttemptArgs *args;
+    TableRuntimeHandle handle;
+    TableRuntime *table;
+    InsertStatement stmt;
+    int row_index;
+
+    args = (WriteAttemptArgs *)arg;
+    handle.entry = NULL;
+    handle.lock_mode = TABLE_RUNTIME_LOCK_NONE;
+    prepare_insert(&stmt, args->table_name, "writer", "99");
+
+    if (table_runtime_acquire_write(args->table_name, &handle) == SUCCESS) {
+        table = table_runtime_handle_table(&handle);
+        if (table != NULL && table_insert_row(table, &stmt, &row_index) == SUCCESS) {
+            args->succeeded = 1;
+        }
+        table_runtime_release(&handle);
+    }
+
+    args->finished = 1;
+    return NULL;
+}
+
 int main(void) {
     pthread_t thread_a;
     pthread_t thread_b;
+    pthread_t read_thread;
+    pthread_t write_thread;
     InsertThreadArgs args_a;
     InsertThreadArgs args_b;
+    ReadHoldArgs read_args;
+    WriteAttemptArgs write_args;
     void *thread_result;
-    TableRuntimeHandle handle_a;
-    TableRuntimeHandle handle_b;
-    TableRuntime *table_a;
-    TableRuntime *table_b;
+    TableRuntimeHandle handle;
+    TableRuntime *table;
+    InsertStatement seed_stmt;
+    int row_index;
+    int registry_before;
 
     table_runtime_cleanup();
 
-    args_a.table_name = "table_a";
+    handle.entry = NULL;
+    handle.lock_mode = TABLE_RUNTIME_LOCK_NONE;
+    if (assert_true(table_runtime_acquire_write("shared_table", &handle) == SUCCESS,
+                    "shared_table should be creatable for concurrency tests") != SUCCESS) {
+        return EXIT_FAILURE;
+    }
+    prepare_insert(&seed_stmt, "shared_table", "seed", "30");
+    if (assert_true(table_insert_row(table_runtime_handle_table(&handle), &seed_stmt, &row_index) ==
+                        SUCCESS,
+                    "shared_table seed insert should succeed") != SUCCESS) {
+        table_runtime_release(&handle);
+        return EXIT_FAILURE;
+    }
+    table_runtime_release(&handle);
+
+    memset(&read_args, 0, sizeof(read_args));
+    read_args.table_name = "shared_table";
+    if (assert_true(pthread_create(&read_thread, NULL, read_hold_worker, &read_args) == 0,
+                    "read hold thread should start") != SUCCESS) {
+        return EXIT_FAILURE;
+    }
+
+    while (!read_args.acquired) {
+        usleep(1000);
+    }
+
+    handle.entry = NULL;
+    handle.lock_mode = TABLE_RUNTIME_LOCK_NONE;
+    if (assert_true(table_runtime_acquire_read("shared_table", &handle) == SUCCESS,
+                    "second read acquire should succeed while another read is active") != SUCCESS) {
+        return EXIT_FAILURE;
+    }
+    table_runtime_release(&handle);
+
+    memset(&write_args, 0, sizeof(write_args));
+    write_args.table_name = "shared_table";
+    if (assert_true(pthread_create(&write_thread, NULL, write_attempt_worker, &write_args) == 0,
+                    "write thread should start") != SUCCESS) {
+        return EXIT_FAILURE;
+    }
+
+    usleep(50000);
+    if (assert_true(write_args.finished == 0,
+                    "write acquire should wait while read lock is held") != SUCCESS) {
+        return EXIT_FAILURE;
+    }
+
+    if (assert_true(pthread_join(read_thread, &thread_result) == 0,
+                    "read thread should join") != SUCCESS ||
+        assert_true(thread_result == NULL, "read thread should succeed") != SUCCESS ||
+        assert_true(pthread_join(write_thread, &thread_result) == 0,
+                    "write thread should join") != SUCCESS ||
+        assert_true(thread_result == NULL, "write thread should succeed") != SUCCESS ||
+        assert_true(write_args.succeeded == 1,
+                    "write thread should eventually succeed after readers release") != SUCCESS) {
+        return EXIT_FAILURE;
+    }
+
+    args_a.table_name = "same_table";
     args_a.name_prefix = "alpha";
     args_a.start_age = 20;
-    args_b.table_name = "table_b";
+    args_b.table_name = "same_table";
     args_b.name_prefix = "beta";
     args_b.start_age = 40;
 
@@ -102,38 +222,34 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
-    handle_a.entry = NULL;
-    handle_b.entry = NULL;
-
-    if (assert_true(table_runtime_acquire("table_a", &handle_a) == SUCCESS,
-                    "table_a should be acquireable after threaded inserts") != SUCCESS) {
-        return EXIT_FAILURE;
-    }
-    if (assert_true(table_runtime_acquire("table_b", &handle_b) == SUCCESS,
-                    "table_b should be acquireable after threaded inserts") != SUCCESS) {
-        table_runtime_release(&handle_a);
+    handle.entry = NULL;
+    handle.lock_mode = TABLE_RUNTIME_LOCK_NONE;
+    if (assert_true(table_runtime_acquire_read("same_table", &handle) == SUCCESS,
+                    "same_table should be readable after concurrent inserts") != SUCCESS) {
         return EXIT_FAILURE;
     }
 
-    table_a = table_runtime_handle_table(&handle_a);
-    table_b = table_runtime_handle_table(&handle_b);
-    if (assert_true(table_a != NULL && table_b != NULL,
-                    "handles should expose both tables") != SUCCESS ||
-        assert_true(table_a->row_count == INSERT_COUNT,
-                    "table_a should retain all inserts") != SUCCESS ||
-        assert_true(table_b->row_count == INSERT_COUNT,
-                    "table_b should retain all inserts") != SUCCESS ||
-        assert_true(table_a->next_id == INSERT_COUNT + 1,
-                    "table_a next_id should remain isolated") != SUCCESS ||
-        assert_true(table_b->next_id == INSERT_COUNT + 1,
-                    "table_b next_id should remain isolated") != SUCCESS) {
-        table_runtime_release(&handle_b);
-        table_runtime_release(&handle_a);
+    table = table_runtime_handle_table(&handle);
+    if (assert_true(table != NULL, "same_table handle should expose runtime") != SUCCESS ||
+        assert_true(table->row_count == INSERT_COUNT * 2,
+                    "same_table should retain all concurrent inserts") != SUCCESS ||
+        assert_true(table->next_id == (INSERT_COUNT * 2) + 1,
+                    "same_table ids should advance without duplication") != SUCCESS) {
+        table_runtime_release(&handle);
+        return EXIT_FAILURE;
+    }
+    table_runtime_release(&handle);
+
+    registry_before = table_runtime_registry_entry_count();
+    if (assert_true(table_runtime_acquire_read("ghost_table", &handle) == TABLE_RUNTIME_NOT_FOUND,
+                    "missing table read flood should keep failing cleanly") != SUCCESS ||
+        assert_true(table_runtime_acquire_read("ghost_table", &handle) == TABLE_RUNTIME_NOT_FOUND,
+                    "missing table read flood should remain stable") != SUCCESS ||
+        assert_true(table_runtime_registry_entry_count() == registry_before,
+                    "missing table reads should not create registry entries") != SUCCESS) {
         return EXIT_FAILURE;
     }
 
-    table_runtime_release(&handle_b);
-    table_runtime_release(&handle_a);
     table_runtime_cleanup();
     puts("[PASS] table_runtime_concurrency");
     return EXIT_SUCCESS;

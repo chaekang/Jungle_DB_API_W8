@@ -1,5 +1,6 @@
 #include "bptree.h"
-#include "executor.h"
+#include "engine.h"
+#include "query_result.h"
 #include "table_runtime.h"
 
 #include <stdio.h>
@@ -14,67 +15,16 @@ static int assert_true(int condition, const char *message) {
     return SUCCESS;
 }
 
-static void prepare_insert(SqlStatement *statement, const char *table_name,
-                           int include_id, const char *id,
-                           const char *name, const char *age) {
-    memset(statement, 0, sizeof(*statement));
-    statement->type = SQL_INSERT;
-    snprintf(statement->insert.table_name, sizeof(statement->insert.table_name),
-             "%s", table_name);
-
-    if (include_id) {
-        statement->insert.column_count = 3;
-        snprintf(statement->insert.columns[0], sizeof(statement->insert.columns[0]), "id");
-        snprintf(statement->insert.columns[1], sizeof(statement->insert.columns[1]), "name");
-        snprintf(statement->insert.columns[2], sizeof(statement->insert.columns[2]), "age");
-        snprintf(statement->insert.values[0], sizeof(statement->insert.values[0]), "%s", id);
-        snprintf(statement->insert.values[1], sizeof(statement->insert.values[1]), "%s", name);
-        snprintf(statement->insert.values[2], sizeof(statement->insert.values[2]), "%s", age);
-        return;
+static int execute_sql_expect_success(const char *sql, QueryResult *result) {
+    query_result_init(result);
+    if (engine_execute_sql(sql, result) != SUCCESS) {
+        return FAILURE;
     }
-
-    statement->insert.column_count = 2;
-    snprintf(statement->insert.columns[0], sizeof(statement->insert.columns[0]), "name");
-    snprintf(statement->insert.columns[1], sizeof(statement->insert.columns[1]), "age");
-    snprintf(statement->insert.values[0], sizeof(statement->insert.values[0]), "%s", name);
-    snprintf(statement->insert.values[1], sizeof(statement->insert.values[1]), "%s", age);
-}
-
-static void prepare_select(SqlStatement *statement, const char *table_name,
-                           const char *select_column, const char *where_column,
-                           const char *op, const char *value) {
-    memset(statement, 0, sizeof(*statement));
-    statement->type = SQL_SELECT;
-    snprintf(statement->select.table_name, sizeof(statement->select.table_name),
-             "%s", table_name);
-    statement->select.column_count = 1;
-    snprintf(statement->select.columns[0], sizeof(statement->select.columns[0]),
-             "%s", select_column);
-    statement->select.has_where = 1;
-    snprintf(statement->select.where.column, sizeof(statement->select.where.column),
-             "%s", where_column);
-    snprintf(statement->select.where.op, sizeof(statement->select.where.op), "%s", op);
-    snprintf(statement->select.where.value, sizeof(statement->select.where.value),
-             "%s", value);
-}
-
-static void prepare_delete(SqlStatement *statement, const char *table_name,
-                           const char *name) {
-    memset(statement, 0, sizeof(*statement));
-    statement->type = SQL_DELETE;
-    snprintf(statement->delete_stmt.table_name,
-             sizeof(statement->delete_stmt.table_name), "%s", table_name);
-    statement->delete_stmt.has_where = 1;
-    snprintf(statement->delete_stmt.where.column,
-             sizeof(statement->delete_stmt.where.column), "name");
-    snprintf(statement->delete_stmt.where.op,
-             sizeof(statement->delete_stmt.where.op), "=");
-    snprintf(statement->delete_stmt.where.value,
-             sizeof(statement->delete_stmt.where.value), "%s", name);
+    return SUCCESS;
 }
 
 int main(void) {
-    SqlStatement statement;
+    QueryResult result;
     TableRuntimeHandle users_handle;
     TableRuntimeHandle orders_handle;
     TableRuntime *table;
@@ -83,22 +33,32 @@ int main(void) {
 
     table_runtime_cleanup();
     users_handle.entry = NULL;
+    users_handle.lock_mode = TABLE_RUNTIME_LOCK_NONE;
     orders_handle.entry = NULL;
+    orders_handle.lock_mode = TABLE_RUNTIME_LOCK_NONE;
 
-    prepare_insert(&statement, "executor_users", 0, "", "Alice", "30");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
-                    "executor should insert first row into executor_users") != SUCCESS) {
+    if (assert_true(execute_sql_expect_success(
+                        "INSERT INTO executor_users (name, age) VALUES ('Alice', 30);",
+                        &result) == SUCCESS,
+                    "engine should insert first row into executor_users") != SUCCESS ||
+        assert_true(strcmp(result.message, "1 row inserted into executor_users.") == 0,
+                    "insert should return a success message") != SUCCESS) {
+        query_result_free(&result);
         return EXIT_FAILURE;
     }
+    query_result_free(&result);
 
-    prepare_insert(&statement, "executor_users", 0, "", "Bob", "25");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
-                    "executor should insert second row into executor_users") != SUCCESS) {
+    if (assert_true(execute_sql_expect_success(
+                        "INSERT INTO executor_users (name, age) VALUES ('Bob', 25);",
+                        &result) == SUCCESS,
+                    "engine should insert second row into executor_users") != SUCCESS) {
+        query_result_free(&result);
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
+    query_result_free(&result);
 
-    if (assert_true(table_runtime_acquire("executor_users", &users_handle) == SUCCESS,
+    if (assert_true(table_runtime_acquire_read("executor_users", &users_handle) == SUCCESS,
                     "should acquire executor_users state") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
@@ -117,14 +77,17 @@ int main(void) {
     }
     table_runtime_release(&users_handle);
 
-    prepare_insert(&statement, "executor_orders", 0, "", "Order-1", "10");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
-                    "executor should insert into executor_orders independently") != SUCCESS) {
+    if (assert_true(execute_sql_expect_success(
+                        "INSERT INTO executor_orders (name, age) VALUES ('Order-1', 10);",
+                        &result) == SUCCESS,
+                    "engine should insert into executor_orders independently") != SUCCESS) {
+        query_result_free(&result);
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
+    query_result_free(&result);
 
-    if (assert_true(table_runtime_acquire("executor_orders", &orders_handle) == SUCCESS,
+    if (assert_true(table_runtime_acquire_read("executor_orders", &orders_handle) == SUCCESS,
                     "should acquire executor_orders state") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
@@ -143,37 +106,74 @@ int main(void) {
     }
     table_runtime_release(&orders_handle);
 
-    prepare_select(&statement, "executor_users", "name", "id", "=", "2");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
-                    "executor should use id index for executor_users id equality select") != SUCCESS) {
+    if (assert_true(execute_sql_expect_success(
+                        "SELECT name FROM executor_users WHERE id = 2;",
+                        &result) == SUCCESS,
+                    "engine should support id equality select") != SUCCESS ||
+        assert_true(result.kind == QUERY_RESULT_TABLE, "SELECT should return table data") != SUCCESS ||
+        assert_true(result.index_used == 1, "id equality select should report index usage") != SUCCESS ||
+        assert_true(result.row_count == 1, "id equality select should return one row") != SUCCESS ||
+        assert_true(strcmp(result.rows[0][0], "Bob") == 0,
+                    "id equality select should return Bob") != SUCCESS) {
+        query_result_free(&result);
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
+    query_result_free(&result);
 
-    prepare_select(&statement, "executor_users", "name", "age", ">=", "27");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
-                    "executor should use linear scan for non-id select") != SUCCESS ||
-        assert_true(executor_execute(&statement) == SUCCESS,
-                    "repeated select should stay stable after other table activity") != SUCCESS) {
+    if (assert_true(execute_sql_expect_success(
+                        "SELECT name FROM executor_users WHERE age >= 27;",
+                        &result) == SUCCESS,
+                    "engine should support non-id select") != SUCCESS ||
+        assert_true(result.index_used == 0, "non-id select should use linear scan") != SUCCESS ||
+        assert_true(result.row_count == 1, "non-id select should return Alice only") != SUCCESS ||
+        assert_true(strcmp(result.rows[0][0], "Alice") == 0,
+                    "non-id select should return Alice") != SUCCESS) {
+        query_result_free(&result);
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
+    query_result_free(&result);
 
-    prepare_insert(&statement, "executor_users", 1, "7", "Charlie", "35");
-    if (assert_true(executor_execute(&statement) == FAILURE,
-                    "executor should reject explicit id inserts") != SUCCESS) {
+    query_result_init(&result);
+    if (assert_true(engine_execute_sql(
+                        "INSERT INTO executor_users (id, name, age) VALUES (7, 'Charlie', 35);",
+                        &result) == FAILURE,
+                    "engine should reject explicit id inserts") != SUCCESS ||
+        assert_true(strstr(result.error, "Explicit id values are not allowed") != NULL,
+                    "explicit id rejection should use structured error") != SUCCESS) {
+        query_result_free(&result);
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
+    query_result_free(&result);
 
-    prepare_delete(&statement, "executor_users", "Bob");
-    if (assert_true(executor_execute(&statement) == FAILURE,
-                    "executor should reject delete in memory runtime mode") != SUCCESS) {
+    query_result_init(&result);
+    if (assert_true(engine_execute_sql(
+                        "DELETE FROM executor_users WHERE name = 'Bob';",
+                        &result) == FAILURE,
+                    "engine should reject delete in memory runtime mode") != SUCCESS ||
+        assert_true(strstr(result.error, "DELETE is not supported") != NULL,
+                    "unsupported delete should use structured error") != SUCCESS) {
+        query_result_free(&result);
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
+    query_result_free(&result);
 
-    if (assert_true(table_runtime_acquire("executor_users", &users_handle) == SUCCESS,
+    query_result_init(&result);
+    if (assert_true(engine_execute_sql("SELECT * FROM missing_executor_table;", &result) ==
+                        FAILURE,
+                    "missing table select should fail") != SUCCESS ||
+        assert_true(strstr(result.error, "not found") != NULL,
+                    "missing table select should report not found") != SUCCESS) {
+        query_result_free(&result);
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+    query_result_free(&result);
+
+    if (assert_true(table_runtime_acquire_read("executor_users", &users_handle) == SUCCESS,
                     "executor_users should still be acquireable after cross-table access") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;

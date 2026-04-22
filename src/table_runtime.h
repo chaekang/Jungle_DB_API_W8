@@ -3,6 +3,8 @@
 
 #include "parser.h"
 
+#include <stddef.h>
+
 struct BPTreeNode;
 struct TableRuntimeEntry;
 
@@ -19,24 +21,45 @@ typedef struct {
     int loaded;
 } TableRuntime;
 
+typedef enum {
+    TABLE_RUNTIME_LOCK_NONE = 0,
+    TABLE_RUNTIME_LOCK_READ,
+    TABLE_RUNTIME_LOCK_WRITE
+} TableRuntimeLockMode;
+
 typedef struct {
     struct TableRuntimeEntry *entry;
+    TableRuntimeLockMode lock_mode;
 } TableRuntimeHandle;
+
+enum {
+    TABLE_RUNTIME_NOT_FOUND = 1
+};
 
 void table_init(TableRuntime *table);
 void table_free(TableRuntime *table);
 int table_reserve_if_needed(TableRuntime *table);
 
+int table_runtime_acquire_read(const char *table_name, TableRuntimeHandle *out_handle);
+int table_runtime_acquire_write(const char *table_name, TableRuntimeHandle *out_handle);
 int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle);
 TableRuntime *table_runtime_handle_table(TableRuntimeHandle *handle);
 void table_runtime_release(TableRuntimeHandle *handle);
+int table_runtime_registry_entry_count(void);
 
 int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
                      int *out_row_index);
+int table_insert_row_with_error(TableRuntime *table, const InsertStatement *stmt,
+                                int *out_row_index, char *error,
+                                size_t error_size);
 char **table_get_row_by_slot(const TableRuntime *table, int row_index);
 int table_linear_scan_by_field(const TableRuntime *table,
                                const WhereClause *where,
                                int **out_row_indices, int *out_count);
+int table_linear_scan_by_field_with_error(const TableRuntime *table,
+                                          const WhereClause *where,
+                                          int **out_row_indices, int *out_count,
+                                          char *error, size_t error_size);
 void table_runtime_cleanup(void);
 
 #endif

@@ -1,6 +1,7 @@
 #include "benchmark.h"
-#include "executor.h"
-#include "parser.h"
+#include "engine.h"
+#include "query_result.h"
+#include "server.h"
 #include "table_runtime.h"
 #include "tokenizer.h"
 #include "utils.h"
@@ -10,10 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
- * 문자열에서 연속된 공백을 건너뛰고 다음 유효 위치를 찾는다.
- * 반환값은 SQL 문이 시작될 수 있는 다음 인덱스다.
- */
 static size_t main_skip_whitespace(const char *text, size_t index) {
     while (text[index] != '\0' && isspace((unsigned char)text[index])) {
         index++;
@@ -21,65 +18,116 @@ static size_t main_skip_whitespace(const char *text, size_t index) {
     return index;
 }
 
-/*
- * 완전한 SQL 문 하나를 파싱하고 실행한다.
- * 빈 문장이거나 정상 실행되면 SUCCESS를 반환한다.
- */
+static void main_print_border(const int *widths, int col_count) {
+    int i;
+    int j;
+
+    for (i = 0; i < col_count; i++) {
+        putchar('+');
+        for (j = 0; j < widths[i] + 2; j++) {
+            putchar('-');
+        }
+    }
+    puts("+");
+}
+
+static void main_print_table_result(const QueryResult *result) {
+    int widths[MAX_COLUMNS];
+    int i;
+    int j;
+    int cell_width;
+
+    for (i = 0; i < result->column_count; i++) {
+        widths[i] = utils_display_width(result->columns[i]);
+    }
+
+    for (i = 0; i < result->row_count; i++) {
+        for (j = 0; j < result->column_count; j++) {
+            cell_width = utils_display_width(result->rows[i][j]);
+            if (cell_width > widths[j]) {
+                widths[j] = cell_width;
+            }
+        }
+    }
+
+    main_print_border(widths, result->column_count);
+    for (i = 0; i < result->column_count; i++) {
+        printf("| ");
+        utils_print_padded(stdout, result->columns[i], widths[i]);
+        putchar(' ');
+    }
+    puts("|");
+    main_print_border(widths, result->column_count);
+
+    for (i = 0; i < result->row_count; i++) {
+        for (j = 0; j < result->column_count; j++) {
+            printf("| ");
+            utils_print_padded(stdout, result->rows[i][j], widths[j]);
+            putchar(' ');
+        }
+        puts("|");
+    }
+
+    main_print_border(widths, result->column_count);
+    printf("%d row%s selected.\n", result->row_count,
+           result->row_count == 1 ? "" : "s");
+}
+
+static int main_print_result(const QueryResult *result) {
+    if (result == NULL) {
+        return FAILURE;
+    }
+
+    if (!result->success) {
+        fprintf(stderr, "Error: %s\n",
+                result->error[0] == '\0' ? "Unknown error." : result->error);
+        return FAILURE;
+    }
+
+    if (result->kind == QUERY_RESULT_MESSAGE) {
+        puts(result->message);
+        return SUCCESS;
+    }
+
+    if (result->kind == QUERY_RESULT_TABLE) {
+        main_print_table_result(result);
+        return SUCCESS;
+    }
+
+    return SUCCESS;
+}
+
 static int main_process_sql_statement(const char *sql) {
-    Token *tokens;
-    int token_count;
-    SqlStatement statement;
-    char *working_sql;
+    QueryResult result;
     int status;
 
     if (sql == NULL) {
         return FAILURE;
     }
 
-    working_sql = utils_strdup(sql);
-    if (working_sql == NULL) {
-        return FAILURE;
+    query_result_init(&result);
+    status = engine_execute_sql(sql, &result);
+    if (main_print_result(&result) != SUCCESS) {
+        status = FAILURE;
     }
-
-    utils_trim(working_sql);
-    if (working_sql[0] == '\0') {
-        free(working_sql);
-        return SUCCESS;
-    }
-
-    tokens = tokenizer_tokenize(working_sql, &token_count);
-    if (tokens == NULL || token_count == 0) {
-        free(tokens);
-        free(working_sql);
-        return FAILURE;
-    }
-
-    status = parser_parse(tokens, token_count, &statement);
-    if (status == SUCCESS) {
-        status = executor_execute(&statement);
-    }
-
-    free(tokens);
-    free(working_sql);
+    query_result_free(&result);
     return status;
 }
 
-/*
- * `.sql` 파일을 읽어 세미콜론 기준으로 문장을 나눈 뒤 순서대로 실행한다.
- * 파일 읽기나 내부 메모리 할당에 실패하지 않으면 SUCCESS를 반환한다.
- */
 static int main_run_file_mode(const char *path) {
     char *content;
     size_t start;
     int terminator_index;
     char *statement;
     char *remaining;
+    int overall_status;
 
     content = utils_read_file(path);
     if (content == NULL) {
         return FAILURE;
     }
 
+    overall_status = SUCCESS;
     start = 0;
     while (content[start] != '\0') {
         start = main_skip_whitespace(content, start);
@@ -97,6 +145,7 @@ static int main_run_file_mode(const char *path) {
             utils_trim(remaining);
             if (remaining[0] != '\0') {
                 fprintf(stderr, "Error: Missing semicolon at end of SQL statement.\n");
+                overall_status = FAILURE;
             }
             free(remaining);
             break;
@@ -109,19 +158,17 @@ static int main_run_file_mode(const char *path) {
             return FAILURE;
         }
 
-        main_process_sql_statement(statement);
+        if (main_process_sql_statement(statement) != SUCCESS) {
+            overall_status = FAILURE;
+        }
         free(statement);
         start = (size_t)terminator_index + 1;
     }
 
     free(content);
-    return SUCCESS;
+    return overall_status;
 }
 
-/*
- * 한 줄 입력을 공백 제거 후 제어 키워드와 비교한다.
- * 일치하면 1, 아니면 0을 반환한다.
- */
 static int main_trimmed_equals(const char *line, const char *keyword) {
     char *copy;
     int result;
@@ -137,10 +184,6 @@ static int main_trimmed_equals(const char *line, const char *keyword) {
     return result;
 }
 
-/*
- * REPL 버퍼에서 처리한 SQL 문을 제거하고 남은 문자열만 유지한다.
- * 성공 시 갱신된 버퍼 소유권은 계속 호출자에게 있다.
- */
 static int main_replace_buffer_with_remainder(char **buffer, size_t *length,
                                               size_t *capacity, int end_index) {
     char *remainder;
@@ -164,10 +207,6 @@ static int main_replace_buffer_with_remainder(char **buffer, size_t *length,
     return SUCCESS;
 }
 
-/*
- * 사용자가 종료하거나 EOF가 올 때까지 대화형 SQL 셸을 실행한다.
- * 정상 종료면 SUCCESS, 메모리 할당 실패면 FAILURE를 반환한다.
- */
 static int main_run_repl_mode(void) {
     char line[MAX_SQL_LENGTH];
     char *buffer;
@@ -175,10 +214,12 @@ static int main_run_repl_mode(void) {
     size_t buffer_capacity;
     int terminator_index;
     char *statement;
+    int overall_status;
 
     buffer = NULL;
     buffer_length = 0;
     buffer_capacity = 0;
+    overall_status = SUCCESS;
 
     while (1) {
         printf("%s", buffer_length == 0 ? "SQL> " : "...> ");
@@ -187,6 +228,7 @@ static int main_run_repl_mode(void) {
         if (fgets(line, sizeof(line), stdin) == NULL) {
             if (buffer != NULL && buffer[0] != '\0') {
                 fprintf(stderr, "Error: Incomplete SQL statement before EOF.\n");
+                overall_status = FAILURE;
             }
             break;
         }
@@ -209,7 +251,9 @@ static int main_run_repl_mode(void) {
                 return FAILURE;
             }
 
-            main_process_sql_statement(statement);
+            if (main_process_sql_statement(statement) != SUCCESS) {
+                overall_status = FAILURE;
+            }
             free(statement);
 
             if (main_replace_buffer_with_remainder(&buffer, &buffer_length,
@@ -230,24 +274,36 @@ static int main_run_repl_mode(void) {
 
     free(buffer);
     puts("Bye.");
-    return SUCCESS;
+    return overall_status;
 }
 
-/*
- * argv에 따라 파일 모드 또는 REPL 모드를 선택하고 종료 전에 파서 캐시를 정리한다.
- * 정상 종료면 EXIT_SUCCESS, 아니면 EXIT_FAILURE를 반환한다.
- */
 int main(int argc, char *argv[]) {
     int status;
 
-    if (argc > 2) {
-        fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark]\n", argv[0]);
+    if (argc > 3) {
+        fprintf(stderr,
+                "Usage: %s [sql_file|--benchmark|benchmark|--server [port]]\n",
+                argv[0]);
         return EXIT_FAILURE;
     }
 
-    if (argc == 2 &&
-        (utils_equals_ignore_case(argv[1], "--benchmark") ||
-         utils_equals_ignore_case(argv[1], "benchmark"))) {
+    if (argc >= 2 &&
+        (utils_equals_ignore_case(argv[1], "--server") ||
+         utils_equals_ignore_case(argv[1], "server"))) {
+        int port = 8080;
+
+        if (argc == 3) {
+            if (!utils_is_integer(argv[2])) {
+                fprintf(stderr, "Error: Server port must be an integer.\n");
+                return EXIT_FAILURE;
+            }
+            port = (int)utils_parse_integer(argv[2]);
+        }
+
+        status = server_run_forever(port, 8, 32);
+    } else if (argc == 2 &&
+               (utils_equals_ignore_case(argv[1], "--benchmark") ||
+                utils_equals_ignore_case(argv[1], "benchmark"))) {
         BenchmarkConfig config = benchmark_default_config();
         status = benchmark_run(&config);
     } else if (argc == 2) {

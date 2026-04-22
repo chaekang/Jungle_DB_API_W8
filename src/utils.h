@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #define SUCCESS 0
 #define FAILURE -1
@@ -111,5 +112,11 @@ int utils_display_width(const char *text);
  * 문자열을 출력한 뒤 목표 표시 폭에 맞을 때까지 공백을 채운다.
  */
 void utils_print_padded(FILE *stream, const char *text, int target_width);
+
+/*
+ * 오류 버퍼가 있으면 포맷된 메시지를 저장한다.
+ * 버퍼가 없으면 아무 작업도 하지 않는다.
+ */
+void utils_set_error(char *buffer, size_t buffer_size, const char *format, ...);
 
 #endif

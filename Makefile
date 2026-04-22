@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -g -Isrc -pthread
+CFLAGS = -Wall -Wextra -std=c99 -g -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE -Isrc -pthread
 DEPFLAGS = -MMD -MP
 SRC_DIR = src
 TEST_DIR = tests

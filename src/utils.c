@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 /*
  * C 문자열을 새 메모리에 복제한다.
@@ -524,4 +525,16 @@ void utils_print_padded(FILE *stream, const char *text, int target_width) {
     for (i = current_width; i < target_width; i++) {
         fputc(' ', stream);
     }
+}
+
+void utils_set_error(char *buffer, size_t buffer_size, const char *format, ...) {
+    va_list args;
+
+    if (buffer == NULL || buffer_size == 0 || format == NULL) {
+        return;
+    }
+
+    va_start(args, format);
+    vsnprintf(buffer, buffer_size, format, args);
+    va_end(args);
 }

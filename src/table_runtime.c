@@ -11,7 +11,7 @@
 
 typedef struct TableRuntimeEntry {
     TableRuntime table;
-    pthread_mutex_t lock;
+    pthread_rwlock_t lock;
     struct TableRuntimeEntry *next;
 } TableRuntimeEntry;
 
@@ -21,14 +21,16 @@ static pthread_mutex_t table_runtime_registry_lock = PTHREAD_MUTEX_INITIALIZER;
 static void table_free_owned_row(char **row, int col_count);
 static int table_find_column_index(const TableRuntime *table, const char *target);
 static int table_validate_insert_schema(const TableRuntime *table,
-                                        const InsertStatement *stmt);
+                                        const InsertStatement *stmt,
+                                        char *error, size_t error_size);
 static int table_initialize_schema(TableRuntime *table,
-                                   const InsertStatement *stmt);
+                                   const InsertStatement *stmt,
+                                   char *error, size_t error_size);
 static char **table_build_row(const TableRuntime *table, const InsertStatement *stmt,
-                              long long next_id);
+                              long long next_id, char *error, size_t error_size);
 static int table_where_matches(int comparison, const char *op);
 static TableRuntimeEntry *table_runtime_find_entry_locked(const char *table_name);
-static TableRuntimeEntry *table_runtime_create_entry(const char *table_name);
+static TableRuntimeEntry *table_runtime_create_entry_locked(const char *table_name);
 static void table_runtime_destroy_entry(TableRuntimeEntry *entry);
 
 static void table_free_owned_row(char **row, int col_count) {
@@ -62,21 +64,31 @@ static int table_find_column_index(const TableRuntime *table, const char *target
 }
 
 static int table_validate_insert_schema(const TableRuntime *table,
-                                        const InsertStatement *stmt) {
+                                        const InsertStatement *stmt,
+                                        char *error, size_t error_size) {
     int i;
 
     if (table == NULL || stmt == NULL) {
         return FAILURE;
     }
 
+    for (i = 0; i < stmt->column_count; i++) {
+        if (utils_equals_ignore_case(stmt->columns[i], "id")) {
+            utils_set_error(error, error_size, "Explicit id values are not allowed.");
+            return FAILURE;
+        }
+    }
+
     if (stmt->column_count <= 0 || stmt->column_count != table->col_count - 1) {
-        fprintf(stderr, "Error: INSERT columns do not match table schema.\n");
+        utils_set_error(error, error_size,
+                        "INSERT columns do not match table schema.");
         return FAILURE;
     }
 
     for (i = 0; i < stmt->column_count; i++) {
         if (!utils_equals_ignore_case(table->columns[i + 1], stmt->columns[i])) {
-            fprintf(stderr, "Error: INSERT columns do not match table schema.\n");
+            utils_set_error(error, error_size,
+                            "INSERT columns do not match table schema.");
             return FAILURE;
         }
     }
@@ -84,8 +96,8 @@ static int table_validate_insert_schema(const TableRuntime *table,
     return SUCCESS;
 }
 
-static int table_initialize_schema(TableRuntime *table,
-                                   const InsertStatement *stmt) {
+static int table_initialize_schema(TableRuntime *table, const InsertStatement *stmt,
+                                   char *error, size_t error_size) {
     int i;
 
     if (table == NULL || stmt == NULL) {
@@ -93,24 +105,25 @@ static int table_initialize_schema(TableRuntime *table,
     }
 
     if (stmt->column_count <= 0 || stmt->column_count + 1 > MAX_COLUMNS) {
-        fprintf(stderr, "Error: Invalid INSERT column count.\n");
+        utils_set_error(error, error_size, "Invalid INSERT column count.");
         return FAILURE;
     }
 
     table->col_count = stmt->column_count + 1;
     if (utils_safe_strcpy(table->columns[0], sizeof(table->columns[0]), "id") != SUCCESS) {
+        utils_set_error(error, error_size, "Column name is too long.");
         return FAILURE;
     }
 
     for (i = 0; i < stmt->column_count; i++) {
         if (utils_equals_ignore_case(stmt->columns[i], "id")) {
-            fprintf(stderr, "Error: Explicit id values are not allowed.\n");
+            utils_set_error(error, error_size, "Explicit id values are not allowed.");
             return FAILURE;
         }
 
         if (utils_safe_strcpy(table->columns[i + 1], sizeof(table->columns[i + 1]),
                               stmt->columns[i]) != SUCCESS) {
-            fprintf(stderr, "Error: Column name is too long.\n");
+            utils_set_error(error, error_size, "Column name is too long.");
             return FAILURE;
         }
     }
@@ -121,7 +134,7 @@ static int table_initialize_schema(TableRuntime *table,
 }
 
 static char **table_build_row(const TableRuntime *table, const InsertStatement *stmt,
-                              long long next_id) {
+                              long long next_id, char *error, size_t error_size) {
     char **row;
     char id_buffer[MAX_VALUE_LEN];
     int i;
@@ -132,7 +145,7 @@ static char **table_build_row(const TableRuntime *table, const InsertStatement *
 
     row = (char **)calloc((size_t)table->col_count, sizeof(char *));
     if (row == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
+        utils_set_error(error, error_size, "Failed to allocate memory.");
         return NULL;
     }
 
@@ -140,6 +153,7 @@ static char **table_build_row(const TableRuntime *table, const InsertStatement *
     row[0] = utils_strdup(id_buffer);
     if (row[0] == NULL) {
         free(row);
+        utils_set_error(error, error_size, "Failed to allocate memory.");
         return NULL;
     }
 
@@ -152,6 +166,7 @@ static char **table_build_row(const TableRuntime *table, const InsertStatement *
                 free(row[j]);
             }
             free(row);
+            utils_set_error(error, error_size, "Failed to allocate memory.");
             return NULL;
         }
     }
@@ -196,25 +211,22 @@ static TableRuntimeEntry *table_runtime_find_entry_locked(const char *table_name
     return NULL;
 }
 
-static TableRuntimeEntry *table_runtime_create_entry(const char *table_name) {
+static TableRuntimeEntry *table_runtime_create_entry_locked(const char *table_name) {
     TableRuntimeEntry *entry;
 
     entry = (TableRuntimeEntry *)calloc(1, sizeof(*entry));
     if (entry == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
         return NULL;
     }
 
     table_init(&entry->table);
     if (utils_safe_strcpy(entry->table.table_name, sizeof(entry->table.table_name),
                           table_name) != SUCCESS) {
-        fprintf(stderr, "Error: Table name is too long.\n");
         free(entry);
         return NULL;
     }
 
-    if (pthread_mutex_init(&entry->lock, NULL) != 0) {
-        fprintf(stderr, "Error: Failed to initialize table runtime lock.\n");
+    if (pthread_rwlock_init(&entry->lock, NULL) != 0) {
         free(entry);
         return NULL;
     }
@@ -230,7 +242,7 @@ static void table_runtime_destroy_entry(TableRuntimeEntry *entry) {
     }
 
     table_free(&entry->table);
-    pthread_mutex_destroy(&entry->lock);
+    pthread_rwlock_destroy(&entry->lock);
     free(entry);
 }
 
@@ -281,7 +293,6 @@ int table_reserve_if_needed(TableRuntime *table) {
     new_capacity = table->capacity == 0 ? INITIAL_ROW_CAPACITY : table->capacity * 2;
     new_rows = (char ***)realloc(table->rows, (size_t)new_capacity * sizeof(char **));
     if (new_rows == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
         return FAILURE;
     }
 
@@ -290,7 +301,9 @@ int table_reserve_if_needed(TableRuntime *table) {
     return SUCCESS;
 }
 
-int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle) {
+static int table_runtime_acquire_internal(const char *table_name,
+                                          TableRuntimeHandle *out_handle,
+                                          TableRuntimeLockMode mode) {
     TableRuntimeEntry *entry;
 
     if (table_name == NULL || out_handle == NULL) {
@@ -298,34 +311,57 @@ int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle
     }
 
     out_handle->entry = NULL;
+    out_handle->lock_mode = TABLE_RUNTIME_LOCK_NONE;
+
     if (table_name[0] == '\0') {
-        fprintf(stderr, "Error: Table name is empty.\n");
         return FAILURE;
     }
 
     if (pthread_mutex_lock(&table_runtime_registry_lock) != 0) {
-        fprintf(stderr, "Error: Failed to lock table runtime registry.\n");
         return FAILURE;
     }
 
     entry = table_runtime_find_entry_locked(table_name);
+    if (entry == NULL && mode == TABLE_RUNTIME_LOCK_WRITE) {
+        entry = table_runtime_create_entry_locked(table_name);
+    }
+
     if (entry == NULL) {
-        entry = table_runtime_create_entry(table_name);
+        pthread_mutex_unlock(&table_runtime_registry_lock);
+        return mode == TABLE_RUNTIME_LOCK_READ ? TABLE_RUNTIME_NOT_FOUND : FAILURE;
+    }
+
+    if (mode == TABLE_RUNTIME_LOCK_READ) {
+        if (pthread_rwlock_rdlock(&entry->lock) != 0) {
+            pthread_mutex_unlock(&table_runtime_registry_lock);
+            return FAILURE;
+        }
+    } else {
+        if (pthread_rwlock_wrlock(&entry->lock) != 0) {
+            pthread_mutex_unlock(&table_runtime_registry_lock);
+            return FAILURE;
+        }
     }
 
     pthread_mutex_unlock(&table_runtime_registry_lock);
 
-    if (entry == NULL) {
-        return FAILURE;
-    }
-
-    if (pthread_mutex_lock(&entry->lock) != 0) {
-        fprintf(stderr, "Error: Failed to lock table runtime.\n");
-        return FAILURE;
-    }
-
     out_handle->entry = entry;
+    out_handle->lock_mode = mode;
     return SUCCESS;
+}
+
+int table_runtime_acquire_read(const char *table_name, TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_internal(table_name, out_handle,
+                                          TABLE_RUNTIME_LOCK_READ);
+}
+
+int table_runtime_acquire_write(const char *table_name, TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_internal(table_name, out_handle,
+                                          TABLE_RUNTIME_LOCK_WRITE);
+}
+
+int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_write(table_name, out_handle);
 }
 
 TableRuntime *table_runtime_handle_table(TableRuntimeHandle *handle) {
@@ -341,12 +377,38 @@ void table_runtime_release(TableRuntimeHandle *handle) {
         return;
     }
 
-    pthread_mutex_unlock(&handle->entry->lock);
+    if (handle->lock_mode == TABLE_RUNTIME_LOCK_READ) {
+        pthread_rwlock_unlock(&handle->entry->lock);
+    } else if (handle->lock_mode == TABLE_RUNTIME_LOCK_WRITE) {
+        pthread_rwlock_unlock(&handle->entry->lock);
+    }
+
     handle->entry = NULL;
+    handle->lock_mode = TABLE_RUNTIME_LOCK_NONE;
 }
 
-int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
-                     int *out_row_index) {
+int table_runtime_registry_entry_count(void) {
+    TableRuntimeEntry *entry;
+    int count;
+
+    if (pthread_mutex_lock(&table_runtime_registry_lock) != 0) {
+        return FAILURE;
+    }
+
+    count = 0;
+    entry = table_runtime_registry_head;
+    while (entry != NULL) {
+        count++;
+        entry = entry->next;
+    }
+
+    pthread_mutex_unlock(&table_runtime_registry_lock);
+    return count;
+}
+
+int table_insert_row_with_error(TableRuntime *table, const InsertStatement *stmt,
+                                int *out_row_index, char *error,
+                                size_t error_size) {
     char **row;
     int row_index;
 
@@ -357,35 +419,37 @@ int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
     if (table->table_name[0] == '\0') {
         if (utils_safe_strcpy(table->table_name, sizeof(table->table_name),
                               stmt->table_name) != SUCCESS) {
-            fprintf(stderr, "Error: Table name is too long.\n");
+            utils_set_error(error, error_size, "Table name is too long.");
             return FAILURE;
         }
     }
 
     if (!utils_equals_ignore_case(table->table_name, stmt->table_name)) {
-        fprintf(stderr, "Error: Active runtime table does not match INSERT target.\n");
+        utils_set_error(error, error_size,
+                        "Active runtime table does not match INSERT target.");
         return FAILURE;
     }
 
     if (!table->loaded) {
-        if (table_initialize_schema(table, stmt) != SUCCESS) {
+        if (table_initialize_schema(table, stmt, error, error_size) != SUCCESS) {
             return FAILURE;
         }
-    } else if (table_validate_insert_schema(table, stmt) != SUCCESS) {
+    } else if (table_validate_insert_schema(table, stmt, error, error_size) != SUCCESS) {
         return FAILURE;
     }
 
     if (table_reserve_if_needed(table) != SUCCESS) {
+        utils_set_error(error, error_size, "Failed to allocate memory.");
         return FAILURE;
     }
 
-    row = table_build_row(table, stmt, table->next_id);
+    row = table_build_row(table, stmt, table->next_id, error, error_size);
     if (row == NULL) {
         return FAILURE;
     }
 
     if (table->next_id > INT_MAX) {
-        fprintf(stderr, "Error: Runtime id exceeds B+ tree key range.\n");
+        utils_set_error(error, error_size, "Runtime id exceeds B+ tree key range.");
         table_free_owned_row(row, table->col_count);
         return FAILURE;
     }
@@ -393,6 +457,7 @@ int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
     row_index = table->row_count;
     table->rows[row_index] = row;
     if (bptree_insert(&table->id_index_root, (int)table->next_id, row_index) != SUCCESS) {
+        utils_set_error(error, error_size, "Failed to update id index.");
         table_free_owned_row(table->rows[row_index], table->col_count);
         table->rows[row_index] = NULL;
         return FAILURE;
@@ -404,6 +469,11 @@ int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
     return SUCCESS;
 }
 
+int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
+                     int *out_row_index) {
+    return table_insert_row_with_error(table, stmt, out_row_index, NULL, 0);
+}
+
 char **table_get_row_by_slot(const TableRuntime *table, int row_index) {
     if (table == NULL || row_index < 0 || row_index >= table->row_count) {
         return NULL;
@@ -412,9 +482,10 @@ char **table_get_row_by_slot(const TableRuntime *table, int row_index) {
     return table->rows[row_index];
 }
 
-int table_linear_scan_by_field(const TableRuntime *table,
-                               const WhereClause *where,
-                               int **out_row_indices, int *out_count) {
+int table_linear_scan_by_field_with_error(const TableRuntime *table,
+                                          const WhereClause *where,
+                                          int **out_row_indices, int *out_count,
+                                          char *error, size_t error_size) {
     int *matches;
     int match_count;
     int i;
@@ -433,7 +504,7 @@ int table_linear_scan_by_field(const TableRuntime *table,
 
     matches = (int *)malloc((size_t)table->row_count * sizeof(int));
     if (matches == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
+        utils_set_error(error, error_size, "Failed to allocate memory.");
         return FAILURE;
     }
 
@@ -448,7 +519,7 @@ int table_linear_scan_by_field(const TableRuntime *table,
 
     where_column_index = table_find_column_index(table, where->column);
     if (where_column_index == FAILURE) {
-        fprintf(stderr, "Error: Column '%s' not found.\n", where->column);
+        utils_set_error(error, error_size, "Column '%s' not found.", where->column);
         free(matches);
         return FAILURE;
     }
@@ -472,12 +543,18 @@ int table_linear_scan_by_field(const TableRuntime *table,
     return SUCCESS;
 }
 
+int table_linear_scan_by_field(const TableRuntime *table,
+                               const WhereClause *where,
+                               int **out_row_indices, int *out_count) {
+    return table_linear_scan_by_field_with_error(table, where, out_row_indices,
+                                                 out_count, NULL, 0);
+}
+
 void table_runtime_cleanup(void) {
     TableRuntimeEntry *entry;
     TableRuntimeEntry *next;
 
     if (pthread_mutex_lock(&table_runtime_registry_lock) != 0) {
-        fprintf(stderr, "Error: Failed to lock table runtime registry.\n");
         return;
     }
 

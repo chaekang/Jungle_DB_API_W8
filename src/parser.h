@@ -45,10 +45,8 @@ typedef struct {
     };
 } SqlStatement;
 
-/*
- * 토큰 배열을 구조화된 SQL 문 구조체로 파싱한다.
- * 성공 시 SUCCESS, 문법 오류 시 FAILURE를 반환한다.
- */
 int parser_parse(const Token *tokens, int token_count, SqlStatement *out);
+int parser_parse_with_error(const Token *tokens, int token_count, SqlStatement *out,
+                            char *error, size_t error_size);
 
 #endif

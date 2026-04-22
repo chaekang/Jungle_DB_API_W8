@@ -2,11 +2,11 @@
 #define EXECUTOR_H
 
 #include "parser.h"
+#include "query_result.h"
+#include "table_runtime.h"
 
-/*
- * 파싱이 끝난 SQL 문 하나를 실행한다.
- * 성공 시 SUCCESS, 실패 시 FAILURE를 반환한다.
- */
-int executor_execute(const SqlStatement *statement);
+int executor_execute_with_runtime(const SqlStatement *statement,
+                                  TableRuntime *table,
+                                  QueryResult *result);
 
 #endif
