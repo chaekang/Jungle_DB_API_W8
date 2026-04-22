@@ -1,6 +1,6 @@
 #include "parser.h"
+#include "engine_error.h"
 
-#include <stdio.h>
 #include <string.h>
 
 /*
@@ -28,7 +28,7 @@ static int parser_is_token(const Token *tokens, int token_count, int index,
  * 파서 오류 메시지 하나를 stderr로 출력한다.
  */
 static void parser_print_error(const char *message) {
-    fprintf(stderr, "Error: %s\n", message);
+    engine_error_set("%s", message);
 }
 
 /*

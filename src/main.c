@@ -1,8 +1,7 @@
 #include "benchmark.h"
-#include "executor.h"
-#include "parser.h"
-#include "table_runtime.h"
-#include "tokenizer.h"
+#include "engine.h"
+#include "query_result.h"
+#include "server.h"
 #include "utils.h"
 
 #include <ctype.h>
@@ -22,45 +21,26 @@ static size_t main_skip_whitespace(const char *text, size_t index) {
 }
 
 /*
- * 완전한 SQL 문 하나를 파싱하고 실행한다.
+ * 완전한 SQL 문 하나를 실행하고 텍스트 결과를 출력한다.
  * 빈 문장이거나 정상 실행되면 SUCCESS를 반환한다.
  */
 static int main_process_sql_statement(const char *sql) {
-    Token *tokens;
-    int token_count;
-    SqlStatement statement;
-    char *working_sql;
+    QueryResult result;
     int status;
 
     if (sql == NULL) {
         return FAILURE;
     }
 
-    working_sql = utils_strdup(sql);
-    if (working_sql == NULL) {
-        return FAILURE;
-    }
-
-    utils_trim(working_sql);
-    if (working_sql[0] == '\0') {
-        free(working_sql);
-        return SUCCESS;
-    }
-
-    tokens = tokenizer_tokenize(working_sql, &token_count);
-    if (tokens == NULL || token_count == 0) {
-        free(tokens);
-        free(working_sql);
-        return FAILURE;
-    }
-
-    status = parser_parse(tokens, token_count, &statement);
+    query_result_init(&result);
+    status = engine_execute_sql(sql, &result);
     if (status == SUCCESS) {
-        status = executor_execute(&statement);
+        query_result_print_text(stdout, &result);
+    } else {
+        fprintf(stderr, "Error: %s\n", result.error);
     }
 
-    free(tokens);
-    free(working_sql);
+    query_result_free(&result);
     return status;
 }
 
@@ -234,14 +214,16 @@ static int main_run_repl_mode(void) {
 }
 
 /*
- * argv에 따라 파일 모드 또는 REPL 모드를 선택하고 종료 전에 파서 캐시를 정리한다.
+ * argv에 따라 서버 모드, 파일 모드, REPL 모드, benchmark 모드를 선택한다.
  * 정상 종료면 EXIT_SUCCESS, 아니면 EXIT_FAILURE를 반환한다.
  */
 int main(int argc, char *argv[]) {
     int status;
+    int port;
 
-    if (argc > 2) {
-        fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark]\n", argv[0]);
+    if (argc > 3) {
+        fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark|--server [port]]\n",
+                argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -250,13 +232,23 @@ int main(int argc, char *argv[]) {
          utils_equals_ignore_case(argv[1], "benchmark"))) {
         BenchmarkConfig config = benchmark_default_config();
         status = benchmark_run(&config);
+    } else if (argc >= 2 && utils_equals_ignore_case(argv[1], "--server")) {
+        port = 8080;
+        if (argc == 3) {
+            if (!utils_is_integer(argv[2])) {
+                fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark|--server [port]]\n",
+                        argv[0]);
+                return EXIT_FAILURE;
+            }
+            port = (int)utils_parse_integer(argv[2]);
+        }
+        status = server_run(port);
     } else if (argc == 2) {
         status = main_run_file_mode(argv[1]);
     } else {
         status = main_run_repl_mode();
     }
 
-    table_runtime_cleanup();
-    tokenizer_cleanup_cache();
+    engine_cleanup();
     return status == SUCCESS ? EXIT_SUCCESS : EXIT_FAILURE;
 }

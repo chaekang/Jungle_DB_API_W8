@@ -1,17 +1,17 @@
 #include "table_runtime.h"
 
 #include "bptree.h"
+#include "engine_error.h"
 #include "utils.h"
 
 #include <limits.h>
 #include <pthread.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 typedef struct TableRuntimeEntry {
     TableRuntime table;
-    pthread_mutex_t lock;
+    pthread_rwlock_t lock;
     struct TableRuntimeEntry *next;
 } TableRuntimeEntry;
 
@@ -28,7 +28,7 @@ static char **table_build_row(const TableRuntime *table, const InsertStatement *
                               long long next_id);
 static int table_where_matches(int comparison, const char *op);
 static TableRuntimeEntry *table_runtime_find_entry_locked(const char *table_name);
-static TableRuntimeEntry *table_runtime_create_entry(const char *table_name);
+static TableRuntimeEntry *table_runtime_create_entry_locked(const char *table_name);
 static void table_runtime_destroy_entry(TableRuntimeEntry *entry);
 
 static void table_free_owned_row(char **row, int col_count) {
@@ -70,13 +70,13 @@ static int table_validate_insert_schema(const TableRuntime *table,
     }
 
     if (stmt->column_count <= 0 || stmt->column_count != table->col_count - 1) {
-        fprintf(stderr, "Error: INSERT columns do not match table schema.\n");
+        engine_error_set("INSERT columns do not match table schema.");
         return FAILURE;
     }
 
     for (i = 0; i < stmt->column_count; i++) {
         if (!utils_equals_ignore_case(table->columns[i + 1], stmt->columns[i])) {
-            fprintf(stderr, "Error: INSERT columns do not match table schema.\n");
+            engine_error_set("INSERT columns do not match table schema.");
             return FAILURE;
         }
     }
@@ -93,7 +93,7 @@ static int table_initialize_schema(TableRuntime *table,
     }
 
     if (stmt->column_count <= 0 || stmt->column_count + 1 > MAX_COLUMNS) {
-        fprintf(stderr, "Error: Invalid INSERT column count.\n");
+        engine_error_set("Invalid INSERT column count.");
         return FAILURE;
     }
 
@@ -104,13 +104,13 @@ static int table_initialize_schema(TableRuntime *table,
 
     for (i = 0; i < stmt->column_count; i++) {
         if (utils_equals_ignore_case(stmt->columns[i], "id")) {
-            fprintf(stderr, "Error: Explicit id values are not allowed.\n");
+            engine_error_set("Explicit id values are not allowed.");
             return FAILURE;
         }
 
         if (utils_safe_strcpy(table->columns[i + 1], sizeof(table->columns[i + 1]),
                               stmt->columns[i]) != SUCCESS) {
-            fprintf(stderr, "Error: Column name is too long.\n");
+            engine_error_set("Column name is too long.");
             return FAILURE;
         }
     }
@@ -132,7 +132,7 @@ static char **table_build_row(const TableRuntime *table, const InsertStatement *
 
     row = (char **)calloc((size_t)table->col_count, sizeof(char *));
     if (row == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
+        engine_error_set("Failed to allocate memory.");
         return NULL;
     }
 
@@ -196,25 +196,32 @@ static TableRuntimeEntry *table_runtime_find_entry_locked(const char *table_name
     return NULL;
 }
 
-static TableRuntimeEntry *table_runtime_create_entry(const char *table_name) {
+static TableRuntimeEntry *table_runtime_create_entry_locked(const char *table_name) {
     TableRuntimeEntry *entry;
 
     entry = (TableRuntimeEntry *)calloc(1, sizeof(*entry));
     if (entry == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
+        engine_error_set("Failed to allocate memory.");
         return NULL;
     }
 
     table_init(&entry->table);
     if (utils_safe_strcpy(entry->table.table_name, sizeof(entry->table.table_name),
                           table_name) != SUCCESS) {
-        fprintf(stderr, "Error: Table name is too long.\n");
+        engine_error_set("Table name is too long.");
         free(entry);
         return NULL;
     }
 
-    if (pthread_mutex_init(&entry->lock, NULL) != 0) {
-        fprintf(stderr, "Error: Failed to initialize table runtime lock.\n");
+    if (pthread_rwlock_init(&entry->lock, NULL) != 0) {
+        engine_error_set("Failed to initialize table runtime lock.");
+        free(entry);
+        return NULL;
+    }
+
+    if (pthread_rwlock_wrlock(&entry->lock) != 0) {
+        engine_error_set("Failed to lock table runtime.");
+        pthread_rwlock_destroy(&entry->lock);
         free(entry);
         return NULL;
     }
@@ -230,7 +237,7 @@ static void table_runtime_destroy_entry(TableRuntimeEntry *entry) {
     }
 
     table_free(&entry->table);
-    pthread_mutex_destroy(&entry->lock);
+    pthread_rwlock_destroy(&entry->lock);
     free(entry);
 }
 
@@ -281,7 +288,7 @@ int table_reserve_if_needed(TableRuntime *table) {
     new_capacity = table->capacity == 0 ? INITIAL_ROW_CAPACITY : table->capacity * 2;
     new_rows = (char ***)realloc(table->rows, (size_t)new_capacity * sizeof(char **));
     if (new_rows == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
+        engine_error_set("Failed to allocate memory.");
         return FAILURE;
     }
 
@@ -290,7 +297,7 @@ int table_reserve_if_needed(TableRuntime *table) {
     return SUCCESS;
 }
 
-int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle) {
+int table_runtime_acquire_read(const char *table_name, TableRuntimeHandle *out_handle) {
     TableRuntimeEntry *entry;
 
     if (table_name == NULL || out_handle == NULL) {
@@ -299,28 +306,66 @@ int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle
 
     out_handle->entry = NULL;
     if (table_name[0] == '\0') {
-        fprintf(stderr, "Error: Table name is empty.\n");
+        engine_error_set("Table name is empty.");
         return FAILURE;
     }
 
     if (pthread_mutex_lock(&table_runtime_registry_lock) != 0) {
-        fprintf(stderr, "Error: Failed to lock table runtime registry.\n");
+        engine_error_set("Failed to lock table runtime registry.");
+        return FAILURE;
+    }
+
+    entry = table_runtime_find_entry_locked(table_name);
+    pthread_mutex_unlock(&table_runtime_registry_lock);
+
+    if (entry == NULL) {
+        engine_error_set("Table '%s' not found in runtime.", table_name);
+        return FAILURE;
+    }
+
+    if (pthread_rwlock_rdlock(&entry->lock) != 0) {
+        engine_error_set("Failed to lock table runtime.");
+        return FAILURE;
+    }
+
+    out_handle->entry = entry;
+    return SUCCESS;
+}
+
+int table_runtime_acquire_write(const char *table_name, TableRuntimeHandle *out_handle) {
+    TableRuntimeEntry *entry;
+
+    if (table_name == NULL || out_handle == NULL) {
+        return FAILURE;
+    }
+
+    out_handle->entry = NULL;
+    if (table_name[0] == '\0') {
+        engine_error_set("Table name is empty.");
+        return FAILURE;
+    }
+
+    if (pthread_mutex_lock(&table_runtime_registry_lock) != 0) {
+        engine_error_set("Failed to lock table runtime registry.");
         return FAILURE;
     }
 
     entry = table_runtime_find_entry_locked(table_name);
     if (entry == NULL) {
-        entry = table_runtime_create_entry(table_name);
+        entry = table_runtime_create_entry_locked(table_name);
+        pthread_mutex_unlock(&table_runtime_registry_lock);
+        if (entry == NULL) {
+            return FAILURE;
+        }
+
+        out_handle->entry = entry;
+        return SUCCESS;
     }
 
     pthread_mutex_unlock(&table_runtime_registry_lock);
 
-    if (entry == NULL) {
-        return FAILURE;
-    }
-
-    if (pthread_mutex_lock(&entry->lock) != 0) {
-        fprintf(stderr, "Error: Failed to lock table runtime.\n");
+    if (pthread_rwlock_wrlock(&entry->lock) != 0) {
+        engine_error_set("Failed to lock table runtime.");
         return FAILURE;
     }
 
@@ -341,7 +386,7 @@ void table_runtime_release(TableRuntimeHandle *handle) {
         return;
     }
 
-    pthread_mutex_unlock(&handle->entry->lock);
+    pthread_rwlock_unlock(&handle->entry->lock);
     handle->entry = NULL;
 }
 
@@ -357,13 +402,13 @@ int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
     if (table->table_name[0] == '\0') {
         if (utils_safe_strcpy(table->table_name, sizeof(table->table_name),
                               stmt->table_name) != SUCCESS) {
-            fprintf(stderr, "Error: Table name is too long.\n");
+            engine_error_set("Table name is too long.");
             return FAILURE;
         }
     }
 
     if (!utils_equals_ignore_case(table->table_name, stmt->table_name)) {
-        fprintf(stderr, "Error: Active runtime table does not match INSERT target.\n");
+        engine_error_set("Active runtime table does not match INSERT target.");
         return FAILURE;
     }
 
@@ -385,7 +430,7 @@ int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
     }
 
     if (table->next_id > INT_MAX) {
-        fprintf(stderr, "Error: Runtime id exceeds B+ tree key range.\n");
+        engine_error_set("Runtime id exceeds B+ tree key range.");
         table_free_owned_row(row, table->col_count);
         return FAILURE;
     }
@@ -393,6 +438,7 @@ int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
     row_index = table->row_count;
     table->rows[row_index] = row;
     if (bptree_insert(&table->id_index_root, (int)table->next_id, row_index) != SUCCESS) {
+        engine_error_set("Failed to update runtime id index.");
         table_free_owned_row(table->rows[row_index], table->col_count);
         table->rows[row_index] = NULL;
         return FAILURE;
@@ -433,7 +479,7 @@ int table_linear_scan_by_field(const TableRuntime *table,
 
     matches = (int *)malloc((size_t)table->row_count * sizeof(int));
     if (matches == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
+        engine_error_set("Failed to allocate memory.");
         return FAILURE;
     }
 
@@ -448,7 +494,7 @@ int table_linear_scan_by_field(const TableRuntime *table,
 
     where_column_index = table_find_column_index(table, where->column);
     if (where_column_index == FAILURE) {
-        fprintf(stderr, "Error: Column '%s' not found.\n", where->column);
+        engine_error_set("Column '%s' not found.", where->column);
         free(matches);
         return FAILURE;
     }
@@ -477,7 +523,7 @@ void table_runtime_cleanup(void) {
     TableRuntimeEntry *next;
 
     if (pthread_mutex_lock(&table_runtime_registry_lock) != 0) {
-        fprintf(stderr, "Error: Failed to lock table runtime registry.\n");
+        engine_error_set("Failed to lock table runtime registry.");
         return;
     }
 

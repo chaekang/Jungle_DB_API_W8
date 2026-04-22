@@ -1,11 +1,13 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -g -Isrc -pthread
+CFLAGS = -Wall -Wextra -std=c99 -g -Isrc -pthread -D_XOPEN_SOURCE=700
 DEPFLAGS = -MMD -MP
 SRC_DIR = src
 TEST_DIR = tests
 BUILD_DIR = build
 TARGET = sql_processor
 TEST_BIN_DIR = $(BUILD_DIR)/tests
+K6 ?= k6
+K6_BASE_URL ?= http://127.0.0.1:8080
 
 MAIN_SRCS = $(filter-out $(SRC_DIR)/main.c,$(wildcard $(SRC_DIR)/*.c))
 SRCS = $(wildcard $(SRC_DIR)/*.c)
@@ -39,6 +41,21 @@ tests: $(TARGET) $(TEST_BINS)
 clean:
 	rm -rf $(BUILD_DIR) $(TARGET) data/*.csv
 
-.PHONY: all tests clean
+k6-baseline:
+	BASE_URL=$(K6_BASE_URL) $(K6) run loadtests/k6/baseline_fast_lookup.js
+
+k6-mixed-read-read:
+	BASE_URL=$(K6_BASE_URL) $(K6) run loadtests/k6/mixed_same_table_read_read.js
+
+k6-read-write:
+	BASE_URL=$(K6_BASE_URL) $(K6) run loadtests/k6/read_write_conflict.js
+
+k6-cross-table:
+	BASE_URL=$(K6_BASE_URL) $(K6) run loadtests/k6/cross_table_isolation.js
+
+k6-overload:
+	BASE_URL=$(K6_BASE_URL) $(K6) run loadtests/k6/overload_queue.js
+
+.PHONY: all tests clean k6-baseline k6-mixed-read-read k6-read-write k6-cross-table k6-overload
 
 -include $(DEPS)

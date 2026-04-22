@@ -61,8 +61,8 @@ int main(void) {
     users_handle.entry = NULL;
     other_handle.entry = NULL;
 
-    if (assert_true(table_runtime_acquire("runtime_users", &users_handle) == SUCCESS,
-                    "table_runtime_acquire should create runtime_users") != SUCCESS) {
+    if (assert_true(table_runtime_acquire_write("runtime_users", &users_handle) == SUCCESS,
+                    "table_runtime_acquire_write should create runtime_users") != SUCCESS) {
         return EXIT_FAILURE;
     }
 
@@ -134,8 +134,8 @@ int main(void) {
 
     table_runtime_release(&users_handle);
 
-    if (assert_true(table_runtime_acquire("other_users", &other_handle) == SUCCESS,
-                    "table_runtime_acquire should create other_users independently") != SUCCESS) {
+    if (assert_true(table_runtime_acquire_write("other_users", &other_handle) == SUCCESS,
+                    "table_runtime_acquire_write should create other_users independently") != SUCCESS) {
         return EXIT_FAILURE;
     }
 
@@ -154,7 +154,7 @@ int main(void) {
 
     table_runtime_release(&other_handle);
 
-    if (assert_true(table_runtime_acquire("runtime_users", &users_handle) == SUCCESS,
+    if (assert_true(table_runtime_acquire_read("runtime_users", &users_handle) == SUCCESS,
                     "reacquiring runtime_users should preserve its state") != SUCCESS) {
         return EXIT_FAILURE;
     }
@@ -174,7 +174,7 @@ int main(void) {
 
     table_runtime_release(&users_handle);
 
-    if (assert_true(table_runtime_acquire("other_users", &other_handle) == SUCCESS,
+    if (assert_true(table_runtime_acquire_read("other_users", &other_handle) == SUCCESS,
                     "reacquiring other_users should preserve its state") != SUCCESS) {
         return EXIT_FAILURE;
     }

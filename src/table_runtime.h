@@ -27,7 +27,8 @@ void table_init(TableRuntime *table);
 void table_free(TableRuntime *table);
 int table_reserve_if_needed(TableRuntime *table);
 
-int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle);
+int table_runtime_acquire_read(const char *table_name, TableRuntimeHandle *out_handle);
+int table_runtime_acquire_write(const char *table_name, TableRuntimeHandle *out_handle);
 TableRuntime *table_runtime_handle_table(TableRuntimeHandle *handle);
 void table_runtime_release(TableRuntimeHandle *handle);
 

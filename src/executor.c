@@ -1,10 +1,10 @@
 #include "executor.h"
 
 #include "bptree.h"
+#include "engine_error.h"
 #include "table_runtime.h"
 
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -49,7 +49,7 @@ static int executor_allocate_result_rows(char ****rows, int row_count) {
 
     *rows = (char ***)malloc((size_t)row_count * sizeof(char **));
     if (*rows == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
+        engine_error_set("Failed to allocate memory.");
         return FAILURE;
     }
 
@@ -93,7 +93,7 @@ static int executor_copy_projected_row(char ***result_rows, int result_index,
 
     result_rows[result_index] = (char **)malloc((size_t)selected_count * sizeof(char *));
     if (result_rows[result_index] == NULL) {
-        fprintf(stderr, "Error: Failed to allocate memory.\n");
+        engine_error_set("Failed to allocate memory.");
         return FAILURE;
     }
 
@@ -114,66 +114,6 @@ static int executor_copy_projected_row(char ***result_rows, int result_index,
     }
 
     return SUCCESS;
-}
-
-/*
- * SELECT 표 출력용 가로 경계선을 한 줄 출력한다.
- */
-static void executor_print_border(const int *widths, int col_count) {
-    int i;
-    int j;
-
-    for (i = 0; i < col_count; i++) {
-        putchar('+');
-        for (j = 0; j < widths[i] + 2; j++) {
-            putchar('-');
-        }
-    }
-    puts("+");
-}
-
-/*
- * 표시 폭을 고려해 MySQL 스타일 표 형태로 조회 결과를 출력한다.
- */
-static void executor_print_table(char headers[][MAX_IDENTIFIER_LEN], int header_count,
-                                 char ***rows, int row_count) {
-    int widths[MAX_COLUMNS];
-    int i;
-    int j;
-    int cell_width;
-
-    for (i = 0; i < header_count; i++) {
-        widths[i] = utils_display_width(headers[i]);
-    }
-
-    for (i = 0; i < row_count; i++) {
-        for (j = 0; j < header_count; j++) {
-            cell_width = utils_display_width(rows[i][j]);
-            if (cell_width > widths[j]) {
-                widths[j] = cell_width;
-            }
-        }
-    }
-
-    executor_print_border(widths, header_count);
-    for (i = 0; i < header_count; i++) {
-        printf("| ");
-        utils_print_padded(stdout, headers[i], widths[i]);
-        putchar(' ');
-    }
-    puts("|");
-    executor_print_border(widths, header_count);
-
-    for (i = 0; i < row_count; i++) {
-        for (j = 0; j < header_count; j++) {
-            printf("| ");
-            utils_print_padded(stdout, rows[i][j], widths[j]);
-            putchar(' ');
-        }
-        puts("|");
-    }
-
-    executor_print_border(widths, header_count);
 }
 
 /*
@@ -198,7 +138,7 @@ static int executor_prepare_projection(const SelectStatement *stmt,
             selected_indices[i] = i;
             if (utils_safe_strcpy(headers[i], sizeof(headers[i]),
                                   table->columns[i]) != SUCCESS) {
-                fprintf(stderr, "Error: Column name is too long.\n");
+                engine_error_set("Column name is too long.");
                 return FAILURE;
             }
         }
@@ -210,14 +150,14 @@ static int executor_prepare_projection(const SelectStatement *stmt,
         column_index = executor_find_column_index(table->columns, table->col_count,
                                                   stmt->columns[i]);
         if (column_index == FAILURE) {
-            fprintf(stderr, "Error: Column '%s' not found.\n", stmt->columns[i]);
+            engine_error_set("Column '%s' not found.", stmt->columns[i]);
             return FAILURE;
         }
 
         selected_indices[i] = column_index;
         if (utils_safe_strcpy(headers[i], sizeof(headers[i]),
                               table->columns[column_index]) != SUCCESS) {
-            fprintf(stderr, "Error: Column name is too long.\n");
+            engine_error_set("Column name is too long.");
             return FAILURE;
         }
     }
@@ -387,11 +327,12 @@ static int executor_collect_rows_by_scan(const TableRuntime *table,
 }
 
 /*
- * INSERT 문 하나를 메모리 런타임 계층으로 실행하고 결과 메시지를 출력한다.
+ * INSERT 문 하나를 메모리 런타임 계층으로 실행하고 결과 메시지를 반환한다.
  */
-static int executor_execute_insert(const InsertStatement *stmt) {
+static int executor_execute_insert(const InsertStatement *stmt, QueryResult *out_result) {
     TableRuntimeHandle handle;
     TableRuntime *table;
+    char message[256];
     int row_index;
     int status;
 
@@ -400,7 +341,7 @@ static int executor_execute_insert(const InsertStatement *stmt) {
     }
 
     handle.entry = NULL;
-    status = table_runtime_acquire(stmt->table_name, &handle);
+    status = table_runtime_acquire_write(stmt->table_name, &handle);
     if (status != SUCCESS) {
         return FAILURE;
     }
@@ -416,7 +357,13 @@ static int executor_execute_insert(const InsertStatement *stmt) {
         goto cleanup;
     }
 
-    printf("1 row inserted into %s.\n", stmt->table_name);
+    snprintf(message, sizeof(message), "1 row inserted into %s.", stmt->table_name);
+    if (query_result_set_message(out_result, message) != SUCCESS) {
+        engine_error_set("Failed to build query result.");
+        status = FAILURE;
+        goto cleanup;
+    }
+
     status = SUCCESS;
 
 cleanup:
@@ -425,9 +372,9 @@ cleanup:
 }
 
 /*
- * SELECT 문 하나를 메모리 런타임에서 실행하고 표 형태로 출력한다.
+ * SELECT 문 하나를 메모리 런타임에서 실행하고 결과 표를 반환한다.
  */
-static int executor_execute_select(const SelectStatement *stmt) {
+static int executor_execute_select(const SelectStatement *stmt, QueryResult *out_result) {
     TableRuntimeHandle handle;
     TableRuntime *table;
     int selected_indices[MAX_COLUMNS];
@@ -436,6 +383,7 @@ static int executor_execute_select(const SelectStatement *stmt) {
     char ***result_rows;
     int result_row_count;
     int search_key;
+    int index_used;
     int status;
 
     if (stmt == NULL) {
@@ -443,7 +391,7 @@ static int executor_execute_select(const SelectStatement *stmt) {
     }
 
     handle.entry = NULL;
-    status = table_runtime_acquire(stmt->table_name, &handle);
+    status = table_runtime_acquire_read(stmt->table_name, &handle);
     if (status != SUCCESS) {
         return FAILURE;
     }
@@ -455,7 +403,7 @@ static int executor_execute_select(const SelectStatement *stmt) {
     }
 
     if (!table->loaded) {
-        fprintf(stderr, "Error: Table '%s' not found in runtime.\n", stmt->table_name);
+        engine_error_set("Table '%s' not found in runtime.", stmt->table_name);
         status = FAILURE;
         goto cleanup;
     }
@@ -468,10 +416,12 @@ static int executor_execute_select(const SelectStatement *stmt) {
 
     result_rows = NULL;
     result_row_count = 0;
+    index_used = 0;
     if (!stmt->has_where) {
         status = executor_collect_all_rows(table, selected_indices, selected_count,
                                            &result_rows, &result_row_count);
     } else if (executor_can_use_id_index(table, &stmt->where, &search_key)) {
+        index_used = 1;
         status = executor_collect_rows_by_id(table, search_key, selected_indices,
                                              selected_count, &result_rows,
                                              &result_row_count);
@@ -486,12 +436,17 @@ static int executor_execute_select(const SelectStatement *stmt) {
         goto cleanup;
     }
 
-    executor_print_table(headers, selected_count, result_rows, result_row_count);
-    printf("%d row%s selected.\n", result_row_count,
-           result_row_count == 1 ? "" : "s");
+    table_runtime_release(&handle);
 
-    executor_free_result_rows(result_rows, result_row_count, selected_count);
+    if (query_result_take_table(out_result, headers, selected_count,
+                                result_rows, result_row_count) != SUCCESS) {
+        engine_error_set("Failed to build query result.");
+        return FAILURE;
+    }
+
+    out_result->index_used = index_used;
     status = SUCCESS;
+    return status;
 
 cleanup:
     table_runtime_release(&handle);
@@ -503,27 +458,27 @@ cleanup:
  */
 static int executor_execute_delete(const DeleteStatement *stmt) {
     (void)stmt;
-    fprintf(stderr, "Error: DELETE is not supported in memory runtime mode.\n");
+    engine_error_set("DELETE is not supported in memory runtime mode.");
     return FAILURE;
 }
 
 /*
  * 파싱된 SQL 문을 받아 statement.type에 따라 INSERT, SELECT, DELETE로 분기한다.
  */
-int executor_execute(const SqlStatement *statement) {
-    if (statement == NULL) {
+int executor_execute(const SqlStatement *statement, QueryResult *out_result) {
+    if (statement == NULL || out_result == NULL) {
         return FAILURE;
     }
 
     switch (statement->type) {
         case SQL_INSERT:
-            return executor_execute_insert(&statement->insert);
+            return executor_execute_insert(&statement->insert, out_result);
         case SQL_SELECT:
-            return executor_execute_select(&statement->select);
+            return executor_execute_select(&statement->select, out_result);
         case SQL_DELETE:
             return executor_execute_delete(&statement->delete_stmt);
         default:
-            fprintf(stderr, "Error: Unsupported SQL statement type.\n");
+            engine_error_set("Unsupported SQL statement type.");
             return FAILURE;
     }
 }

@@ -16,8 +16,6 @@ int main(void) {
     Token *tokens;
     int token_count;
 
-    tokenizer_cleanup_cache();
-
     tokens = tokenizer_tokenize(
         "insert INTO users (id, name, age) VALUES (1, 'Lee, Jr.', 30);",
         &token_count);
@@ -64,33 +62,14 @@ int main(void) {
     }
     free(tokens);
 
-    if (assert_true(tokenizer_get_cache_entry_count() == 3,
-                    "three unique statements should be cached") != SUCCESS ||
-        assert_true(tokenizer_get_cache_hit_count() == 0,
-                    "cache hit count should still be zero before reuse") != SUCCESS) {
-        tokenizer_cleanup_cache();
-        return EXIT_FAILURE;
-    }
-
     tokens = tokenizer_tokenize("Select * FROM users WHERE age >= 27;", &token_count);
-    if (assert_true(tokens != NULL, "cached parse should still return tokens") != SUCCESS ||
-        assert_true(tokenizer_get_cache_entry_count() == 3,
-                    "cache size should stay stable on repeated SQL") != SUCCESS ||
-        assert_true(tokenizer_get_cache_hit_count() == 1,
-                    "repeated SQL should produce a cache hit") != SUCCESS) {
+    if (assert_true(tokens != NULL, "repeated tokenize should still return tokens") != SUCCESS ||
+        assert_true(token_count == 9,
+                    "repeated SELECT token count should stay stable") != SUCCESS) {
         free(tokens);
-        tokenizer_cleanup_cache();
         return EXIT_FAILURE;
     }
     free(tokens);
-
-    tokenizer_cleanup_cache();
-    if (assert_true(tokenizer_get_cache_entry_count() == 0,
-                    "cache cleanup should release stored statements") != SUCCESS ||
-        assert_true(tokenizer_get_cache_hit_count() == 0,
-                    "cache cleanup should reset hit count") != SUCCESS) {
-        return EXIT_FAILURE;
-    }
 
     puts("[PASS] tokenizer");
     return EXIT_SUCCESS;

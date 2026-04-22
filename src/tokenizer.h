@@ -29,21 +29,6 @@ typedef struct {
 Token *tokenizer_tokenize(const char *sql, int *token_count);
 
 /*
- * 토크나이저가 보관 중인 캐시를 모두 해제한다.
- */
-void tokenizer_cleanup_cache(void);
-
-/*
- * 현재 캐시에 저장된 SQL 문 개수를 반환한다.
- */
-int tokenizer_get_cache_entry_count(void);
-
-/*
- * 마지막 캐시 정리 이후 발생한 캐시 히트 수를 반환한다.
- */
-int tokenizer_get_cache_hit_count(void);
-
-/*
  * 토큰 타입을 사람이 읽기 쉬운 문자열로 반환한다.
  */
 const char *tokenizer_token_type_name(TokenType type);

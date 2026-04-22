@@ -50,7 +50,7 @@ static void *insert_rows_worker(void *arg) {
         snprintf(age, sizeof(age), "%d", args->start_age + (i % 50));
         prepare_insert(&stmt, args->table_name, name, age);
 
-        if (table_runtime_acquire(args->table_name, &handle) != SUCCESS) {
+        if (table_runtime_acquire_write(args->table_name, &handle) != SUCCESS) {
             return (void *)1;
         }
 
@@ -105,11 +105,11 @@ int main(void) {
     handle_a.entry = NULL;
     handle_b.entry = NULL;
 
-    if (assert_true(table_runtime_acquire("table_a", &handle_a) == SUCCESS,
+    if (assert_true(table_runtime_acquire_read("table_a", &handle_a) == SUCCESS,
                     "table_a should be acquireable after threaded inserts") != SUCCESS) {
         return EXIT_FAILURE;
     }
-    if (assert_true(table_runtime_acquire("table_b", &handle_b) == SUCCESS,
+    if (assert_true(table_runtime_acquire_read("table_b", &handle_b) == SUCCESS,
                     "table_b should be acquireable after threaded inserts") != SUCCESS) {
         table_runtime_release(&handle_a);
         return EXIT_FAILURE;
