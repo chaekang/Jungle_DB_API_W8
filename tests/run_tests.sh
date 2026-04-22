@@ -40,7 +40,8 @@ run_sql_test() {
 
 for binary in build/tests/test_tokenizer build/tests/test_parser \
               build/tests/test_storage build/tests/test_benchmark build/tests/test_table_runtime \
-              build/tests/test_table_runtime_concurrency build/tests/test_bptree build/tests/test_executor
+              build/tests/test_table_runtime_concurrency build/tests/test_bptree build/tests/test_executor \
+              build/tests/test_engine
 do
     run_unit_test "$binary"
 done
@@ -51,7 +52,7 @@ run_sql_test "WHERE id index" "tests/test_cases/select_where_id.sql" "Bob"
 run_sql_test "WHERE equals" "tests/test_cases/select_where.sql" "Bob"
 run_sql_test "Edge cases" "tests/test_cases/edge_cases.sql" "Lee, Jr."
 run_sql_test "Explicit id rejected" "tests/test_cases/duplicate_primary_key.sql" "Explicit id values are not allowed"
-run_sql_test "Delete unsupported" "tests/test_cases/delete_where.sql" "DELETE is not supported in memory runtime mode"
+run_sql_test "Delete supported" "tests/test_cases/delete_where.sql" "1 row deleted from users."
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

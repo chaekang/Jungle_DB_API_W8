@@ -1,6 +1,6 @@
+#include "api_server.h"
 #include "benchmark.h"
-#include "executor.h"
-#include "parser.h"
+#include "engine.h"
 #include "table_runtime.h"
 #include "tokenizer.h"
 #include "utils.h"
@@ -26,41 +26,17 @@ static size_t main_skip_whitespace(const char *text, size_t index) {
  * 빈 문장이거나 정상 실행되면 SUCCESS를 반환한다.
  */
 static int main_process_sql_statement(const char *sql) {
-    Token *tokens;
-    int token_count;
-    SqlStatement statement;
-    char *working_sql;
+    QueryResult result;
     int status;
 
     if (sql == NULL) {
         return FAILURE;
     }
 
-    working_sql = utils_strdup(sql);
-    if (working_sql == NULL) {
-        return FAILURE;
-    }
-
-    utils_trim(working_sql);
-    if (working_sql[0] == '\0') {
-        free(working_sql);
-        return SUCCESS;
-    }
-
-    tokens = tokenizer_tokenize(working_sql, &token_count);
-    if (tokens == NULL || token_count == 0) {
-        free(tokens);
-        free(working_sql);
-        return FAILURE;
-    }
-
-    status = parser_parse(tokens, token_count, &statement);
-    if (status == SUCCESS) {
-        status = executor_execute(&statement);
-    }
-
-    free(tokens);
-    free(working_sql);
+    query_result_init(&result);
+    status = engine_execute_sql(sql, &result);
+    query_result_print(status == SUCCESS ? stdout : stderr, &result);
+    query_result_free(&result);
     return status;
 }
 
@@ -239,9 +215,11 @@ static int main_run_repl_mode(void) {
  */
 int main(int argc, char *argv[]) {
     int status;
+    int port;
 
     if (argc > 2) {
-        fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark|--server[=PORT]]\n",
+                argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -250,6 +228,17 @@ int main(int argc, char *argv[]) {
          utils_equals_ignore_case(argv[1], "benchmark"))) {
         BenchmarkConfig config = benchmark_default_config();
         status = benchmark_run(&config);
+    } else if (argc == 2 &&
+               (utils_equals_ignore_case(argv[1], "--server") ||
+                utils_equals_ignore_case(argv[1], "server"))) {
+        status = api_server_run(API_SERVER_DEFAULT_PORT);
+    } else if (argc == 2 && strncmp(argv[1], "--server=", 9) == 0) {
+        port = atoi(argv[1] + 9);
+        if (port <= 0 || port > 65535) {
+            fprintf(stderr, "Error: Invalid port '%s'.\n", argv[1] + 9);
+            return EXIT_FAILURE;
+        }
+        status = api_server_run(port);
     } else if (argc == 2) {
         status = main_run_file_mode(argv[1]);
     } else {

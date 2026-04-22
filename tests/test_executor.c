@@ -167,8 +167,8 @@ int main(void) {
     }
 
     prepare_delete(&statement, "executor_users", "Bob");
-    if (assert_true(executor_execute(&statement) == FAILURE,
-                    "executor should reject delete in memory runtime mode") != SUCCESS) {
+    if (assert_true(executor_execute(&statement) == SUCCESS,
+                    "executor should delete rows in memory runtime mode") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
@@ -180,11 +180,11 @@ int main(void) {
     }
 
     table = table_runtime_handle_table(&users_handle);
-    row = table_get_row_by_slot(table, 1);
+    row = table_get_row_by_slot(table, 0);
     if (assert_true(row != NULL, "runtime row lookup should still succeed") != SUCCESS ||
-        assert_true(strcmp(row[0], "2") == 0, "second row id should remain 2") != SUCCESS ||
-        assert_true(strcmp(row[1], "Bob") == 0, "Bob should remain after delete failure") != SUCCESS ||
-        assert_true(table->row_count == 2, "executor_users row count should stay stable") != SUCCESS) {
+        assert_true(strcmp(row[0], "1") == 0, "remaining row id should remain 1") != SUCCESS ||
+        assert_true(strcmp(row[1], "Alice") == 0, "Alice should remain after deleting Bob") != SUCCESS ||
+        assert_true(table->row_count == 1, "executor_users row count should shrink after delete") != SUCCESS) {
         table_runtime_release(&users_handle);
         table_runtime_cleanup();
         return EXIT_FAILURE;

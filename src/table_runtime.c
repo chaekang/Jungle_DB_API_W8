@@ -11,7 +11,7 @@
 
 typedef struct TableRuntimeEntry {
     TableRuntime table;
-    pthread_mutex_t lock;
+    pthread_rwlock_t lock;
     struct TableRuntimeEntry *next;
 } TableRuntimeEntry;
 
@@ -27,9 +27,14 @@ static int table_initialize_schema(TableRuntime *table,
 static char **table_build_row(const TableRuntime *table, const InsertStatement *stmt,
                               long long next_id);
 static int table_where_matches(int comparison, const char *op);
+static int table_rebuild_id_index(TableRuntime *table);
 static TableRuntimeEntry *table_runtime_find_entry_locked(const char *table_name);
 static TableRuntimeEntry *table_runtime_create_entry(const char *table_name);
 static void table_runtime_destroy_entry(TableRuntimeEntry *entry);
+static int table_runtime_acquire_internal(const char *table_name,
+                                          TableRuntimeHandle *out_handle,
+                                          TableRuntimeLockMode lock_mode,
+                                          int create_if_missing);
 
 static void table_free_owned_row(char **row, int col_count) {
     int i;
@@ -182,6 +187,37 @@ static int table_where_matches(int comparison, const char *op) {
     return 0;
 }
 
+static int table_rebuild_id_index(TableRuntime *table) {
+    int i;
+    long long parsed_id;
+
+    if (table == NULL) {
+        return FAILURE;
+    }
+
+    bptree_free(table->id_index_root);
+    table->id_index_root = NULL;
+
+    for (i = 0; i < table->row_count; i++) {
+        if (table->rows[i] == NULL || !utils_is_integer(table->rows[i][table->id_column_index])) {
+            fprintf(stderr, "Error: Failed to rebuild id index from runtime rows.\n");
+            return FAILURE;
+        }
+
+        parsed_id = utils_parse_integer(table->rows[i][table->id_column_index]);
+        if (parsed_id < 0 || parsed_id > INT_MAX) {
+            fprintf(stderr, "Error: Runtime id exceeds B+ tree key range.\n");
+            return FAILURE;
+        }
+
+        if (bptree_insert(&table->id_index_root, (int)parsed_id, i) != SUCCESS) {
+            return FAILURE;
+        }
+    }
+
+    return SUCCESS;
+}
+
 static TableRuntimeEntry *table_runtime_find_entry_locked(const char *table_name) {
     TableRuntimeEntry *entry;
 
@@ -213,7 +249,7 @@ static TableRuntimeEntry *table_runtime_create_entry(const char *table_name) {
         return NULL;
     }
 
-    if (pthread_mutex_init(&entry->lock, NULL) != 0) {
+    if (pthread_rwlock_init(&entry->lock, NULL) != 0) {
         fprintf(stderr, "Error: Failed to initialize table runtime lock.\n");
         free(entry);
         return NULL;
@@ -230,7 +266,7 @@ static void table_runtime_destroy_entry(TableRuntimeEntry *entry) {
     }
 
     table_free(&entry->table);
-    pthread_mutex_destroy(&entry->lock);
+    pthread_rwlock_destroy(&entry->lock);
     free(entry);
 }
 
@@ -290,7 +326,10 @@ int table_reserve_if_needed(TableRuntime *table) {
     return SUCCESS;
 }
 
-int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle) {
+static int table_runtime_acquire_internal(const char *table_name,
+                                          TableRuntimeHandle *out_handle,
+                                          TableRuntimeLockMode lock_mode,
+                                          int create_if_missing) {
     TableRuntimeEntry *entry;
 
     if (table_name == NULL || out_handle == NULL) {
@@ -298,6 +337,7 @@ int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle
     }
 
     out_handle->entry = NULL;
+    out_handle->lock_mode = TABLE_RUNTIME_LOCK_NONE;
     if (table_name[0] == '\0') {
         fprintf(stderr, "Error: Table name is empty.\n");
         return FAILURE;
@@ -309,7 +349,7 @@ int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle
     }
 
     entry = table_runtime_find_entry_locked(table_name);
-    if (entry == NULL) {
+    if (entry == NULL && create_if_missing) {
         entry = table_runtime_create_entry(table_name);
     }
 
@@ -319,13 +359,35 @@ int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle
         return FAILURE;
     }
 
-    if (pthread_mutex_lock(&entry->lock) != 0) {
-        fprintf(stderr, "Error: Failed to lock table runtime.\n");
-        return FAILURE;
+    if (lock_mode == TABLE_RUNTIME_LOCK_READ) {
+        if (pthread_rwlock_rdlock(&entry->lock) != 0) {
+            fprintf(stderr, "Error: Failed to lock table runtime for read.\n");
+            return FAILURE;
+        }
+    } else {
+        if (pthread_rwlock_wrlock(&entry->lock) != 0) {
+            fprintf(stderr, "Error: Failed to lock table runtime for write.\n");
+            return FAILURE;
+        }
     }
 
     out_handle->entry = entry;
+    out_handle->lock_mode = lock_mode;
     return SUCCESS;
+}
+
+int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_write(table_name, out_handle);
+}
+
+int table_runtime_acquire_read(const char *table_name, TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_internal(table_name, out_handle,
+                                          TABLE_RUNTIME_LOCK_READ, 0);
+}
+
+int table_runtime_acquire_write(const char *table_name, TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_internal(table_name, out_handle,
+                                          TABLE_RUNTIME_LOCK_WRITE, 1);
 }
 
 TableRuntime *table_runtime_handle_table(TableRuntimeHandle *handle) {
@@ -341,8 +403,9 @@ void table_runtime_release(TableRuntimeHandle *handle) {
         return;
     }
 
-    pthread_mutex_unlock(&handle->entry->lock);
+    pthread_rwlock_unlock(&handle->entry->lock);
     handle->entry = NULL;
+    handle->lock_mode = TABLE_RUNTIME_LOCK_NONE;
 }
 
 int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
@@ -401,6 +464,79 @@ int table_insert_row(TableRuntime *table, const InsertStatement *stmt,
     *out_row_index = row_index;
     table->row_count++;
     table->next_id++;
+    return SUCCESS;
+}
+
+int table_delete_where(TableRuntime *table, const DeleteStatement *stmt,
+                       int *out_deleted_count) {
+    int where_column_index;
+    int read_index;
+    int write_index;
+    int deleted_count;
+
+    if (table == NULL || stmt == NULL || out_deleted_count == NULL) {
+        return FAILURE;
+    }
+
+    *out_deleted_count = 0;
+    if (!table->loaded || table->row_count == 0) {
+        return SUCCESS;
+    }
+
+    if (!utils_equals_ignore_case(table->table_name, stmt->table_name)) {
+        fprintf(stderr, "Error: Active runtime table does not match DELETE target.\n");
+        return FAILURE;
+    }
+
+    if (!stmt->has_where) {
+        deleted_count = table->row_count;
+        for (read_index = 0; read_index < table->row_count; read_index++) {
+            table_free_owned_row(table->rows[read_index], table->col_count);
+            table->rows[read_index] = NULL;
+        }
+        table->row_count = 0;
+        if (table_rebuild_id_index(table) != SUCCESS) {
+            return FAILURE;
+        }
+        *out_deleted_count = deleted_count;
+        return SUCCESS;
+    }
+
+    where_column_index = table_find_column_index(table, stmt->where.column);
+    if (where_column_index == FAILURE) {
+        fprintf(stderr, "Error: Column '%s' not found.\n", stmt->where.column);
+        return FAILURE;
+    }
+
+    write_index = 0;
+    deleted_count = 0;
+    for (read_index = 0; read_index < table->row_count; read_index++) {
+        int comparison;
+        int should_delete;
+
+        comparison = utils_compare_values(table->rows[read_index][where_column_index],
+                                          stmt->where.value);
+        should_delete = table_where_matches(comparison, stmt->where.op);
+        if (should_delete) {
+            table_free_owned_row(table->rows[read_index], table->col_count);
+            table->rows[read_index] = NULL;
+            deleted_count++;
+            continue;
+        }
+
+        if (write_index != read_index) {
+            table->rows[write_index] = table->rows[read_index];
+            table->rows[read_index] = NULL;
+        }
+        write_index++;
+    }
+
+    table->row_count = write_index;
+    if (table_rebuild_id_index(table) != SUCCESS) {
+        return FAILURE;
+    }
+
+    *out_deleted_count = deleted_count;
     return SUCCESS;
 }
 
