@@ -135,6 +135,24 @@ int main(void) {
     }
     query_result_free(&result);
 
+    if (assert_true(execute_sql_expect_success(
+                        "SELECT * FROM executor_users WHERE age > 100;",
+                        &result) == SUCCESS,
+                    "engine should allow empty SELECT result sets") != SUCCESS ||
+        assert_true(result.kind == QUERY_RESULT_TABLE,
+                    "empty select should still return table shape") != SUCCESS ||
+        assert_true(result.column_count == 3,
+                    "SELECT * should include every runtime column") != SUCCESS ||
+        assert_true(strcmp(result.columns[0], "id") == 0,
+                    "SELECT * should expose id as the first column") != SUCCESS ||
+        assert_true(result.row_count == 0,
+                    "empty select should return zero rows") != SUCCESS) {
+        query_result_free(&result);
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+    query_result_free(&result);
+
     query_result_init(&result);
     if (assert_true(engine_execute_sql(
                         "INSERT INTO executor_users (id, name, age) VALUES (7, 'Charlie', 35);",
@@ -142,6 +160,44 @@ int main(void) {
                     "engine should reject explicit id inserts") != SUCCESS ||
         assert_true(strstr(result.error, "Explicit id values are not allowed") != NULL,
                     "explicit id rejection should use structured error") != SUCCESS) {
+        query_result_free(&result);
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+    query_result_free(&result);
+
+    query_result_init(&result);
+    if (assert_true(engine_execute_sql(
+                        "INSERT INTO executor_users (name) VALUES ('OnlyName');",
+                        &result) == FAILURE,
+                    "engine should reject schema mismatch inserts") != SUCCESS ||
+        assert_true(strstr(result.error, "schema") != NULL ||
+                        strstr(result.error, "match") != NULL,
+                    "schema mismatch should return a structured schema error") != SUCCESS) {
+        query_result_free(&result);
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+    query_result_free(&result);
+
+    query_result_init(&result);
+    if (assert_true(engine_execute_sql(
+                        "SELECT nickname FROM executor_users;",
+                        &result) == FAILURE,
+                    "engine should reject unknown projection columns") != SUCCESS ||
+        assert_true(strstr(result.error, "Column 'nickname' not found.") != NULL,
+                    "unknown projection should report the missing column") != SUCCESS) {
+        query_result_free(&result);
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+    query_result_free(&result);
+
+    query_result_init(&result);
+    if (assert_true(engine_execute_sql("INSERT INTO broken VALUES (1);", &result) == FAILURE,
+                    "engine should reject malformed INSERT syntax") != SUCCESS ||
+        assert_true(result.error[0] != '\0',
+                    "malformed SQL should populate a structured parse error") != SUCCESS) {
         query_result_free(&result);
         table_runtime_cleanup();
         return EXIT_FAILURE;

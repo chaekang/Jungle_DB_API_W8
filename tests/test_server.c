@@ -63,11 +63,6 @@ static int send_http_request(int port, const char *body,
     char request[4096];
     size_t total;
 
-    client_fd = open_client_connection(port);
-    if (client_fd < 0) {
-        return FAILURE;
-    }
-
     snprintf(request, sizeof(request),
              "POST /query HTTP/1.1\r\n"
              "Host: 127.0.0.1\r\n"
@@ -77,6 +72,40 @@ static int send_http_request(int port, const char *body,
              "\r\n"
              "%s",
              strlen(body), body);
+
+    client_fd = open_client_connection(port);
+    if (client_fd < 0) {
+        return FAILURE;
+    }
+
+    if (send(client_fd, request, strlen(request), 0) < 0) {
+        close(client_fd);
+        return FAILURE;
+    }
+
+    total = 0;
+    while (total + 1 < response_size) {
+        ssize_t received = recv(client_fd, response + total,
+                                response_size - total - 1, 0);
+        if (received <= 0) {
+            break;
+        }
+        total += (size_t)received;
+    }
+    response[total] = '\0';
+    close(client_fd);
+    return SUCCESS;
+}
+
+static int send_raw_request(int port, const char *request,
+                            char *response, size_t response_size) {
+    int client_fd;
+    size_t total;
+
+    client_fd = open_client_connection(port);
+    if (client_fd < 0) {
+        return FAILURE;
+    }
 
     if (send(client_fd, request, strlen(request), 0) < 0) {
         close(client_fd);
@@ -195,6 +224,171 @@ static int test_basic_api_flow(void) {
                     "bad JSON shape should return a response") != SUCCESS ||
         assert_true(strstr(response, "400 Bad Request") != NULL,
                     "bad JSON shape should return 400") != SUCCESS) {
+        server_stop(&server);
+        server_join(&server);
+        server_destroy(&server);
+        return FAILURE;
+    }
+
+    server_stop(&server);
+    server_join(&server);
+    server_destroy(&server);
+    return SUCCESS;
+}
+
+static int count_occurrences(const char *text, const char *pattern) {
+    int count;
+    const char *cursor;
+
+    count = 0;
+    cursor = text;
+    while ((cursor = strstr(cursor, pattern)) != NULL) {
+        count++;
+        cursor += strlen(pattern);
+    }
+
+    return count;
+}
+
+static int test_http_error_mapping(void) {
+    MiniDbServer server;
+    char response[8192];
+
+    if (server_init(&server, 0, 2, 8) != SUCCESS) {
+        return FAILURE;
+    }
+    if (server_start(&server) != SUCCESS) {
+        server_destroy(&server);
+        return FAILURE;
+    }
+
+    if (assert_true(send_raw_request(server_get_port(&server),
+                                     "GET /query HTTP/1.1\r\n"
+                                     "Host: 127.0.0.1\r\n"
+                                     "Connection: close\r\n"
+                                     "\r\n",
+                                     response, sizeof(response)) == SUCCESS,
+                    "GET request should receive a response") != SUCCESS ||
+        assert_true(strstr(response, "400 Bad Request") != NULL,
+                    "GET request should be rejected with 400") != SUCCESS) {
+        server_stop(&server);
+        server_join(&server);
+        server_destroy(&server);
+        return FAILURE;
+    }
+
+    if (assert_true(send_raw_request(server_get_port(&server),
+                                     "POST /unknown HTTP/1.1\r\n"
+                                     "Host: 127.0.0.1\r\n"
+                                     "Content-Length: 2\r\n"
+                                     "Connection: close\r\n"
+                                     "\r\n"
+                                     "{}",
+                                     response, sizeof(response)) == SUCCESS,
+                    "unknown endpoint should receive a response") != SUCCESS ||
+        assert_true(strstr(response, "404 Not Found") != NULL,
+                    "unknown endpoint should return 404") != SUCCESS) {
+        server_stop(&server);
+        server_join(&server);
+        server_destroy(&server);
+        return FAILURE;
+    }
+
+    if (assert_true(send_http_request(server_get_port(&server),
+                                      "{\"sql\":\"INSERT INTO api_conflict (id, name, age) VALUES (5, 'Alice', 30);\"}",
+                                      response, sizeof(response)) == SUCCESS,
+                    "explicit id API request should receive a response") != SUCCESS ||
+        assert_true(strstr(response, "409 Conflict") != NULL,
+                    "explicit id API request should map to 409") != SUCCESS) {
+        server_stop(&server);
+        server_join(&server);
+        server_destroy(&server);
+        return FAILURE;
+    }
+
+    if (assert_true(send_http_request(server_get_port(&server),
+                                      "{\"sql\":\"DELETE FROM api_conflict WHERE name = 'Alice';\"}",
+                                      response, sizeof(response)) == SUCCESS,
+                    "DELETE API request should receive a response") != SUCCESS ||
+        assert_true(strstr(response, "409 Conflict") != NULL,
+                    "DELETE API request should map to 409") != SUCCESS) {
+        server_stop(&server);
+        server_join(&server);
+        server_destroy(&server);
+        return FAILURE;
+    }
+
+    server_stop(&server);
+    server_join(&server);
+    server_destroy(&server);
+    return SUCCESS;
+}
+
+static int test_parallel_insert_integrity(void) {
+    MiniDbServer server;
+    RequestThreadArgs request_args[6];
+    pthread_t request_threads[6];
+    char response[32768];
+    int i;
+
+    if (server_init(&server, 0, 4, 16) != SUCCESS) {
+        return FAILURE;
+    }
+    if (server_start(&server) != SUCCESS) {
+        server_destroy(&server);
+        return FAILURE;
+    }
+
+    for (i = 0; i < 6; i++) {
+        char *body;
+
+        memset(&request_args[i], 0, sizeof(request_args[i]));
+        request_args[i].port = server_get_port(&server);
+        body = (char *)malloc(128);
+        if (body == NULL) {
+            server_stop(&server);
+            server_join(&server);
+            server_destroy(&server);
+            return FAILURE;
+        }
+        snprintf(body, 128,
+                 "{\"sql\":\"INSERT INTO api_parallel_rows (name, age) VALUES ('worker_%d', %d);\"}",
+                 i + 1, 20 + i);
+        request_args[i].body = body;
+        if (assert_true(pthread_create(&request_threads[i], NULL, request_thread_main,
+                                       &request_args[i]) == 0,
+                        "parallel insert thread should start") != SUCCESS) {
+            server_stop(&server);
+            server_join(&server);
+            server_destroy(&server);
+            return FAILURE;
+        }
+    }
+
+    for (i = 0; i < 6; i++) {
+        if (assert_true(pthread_join(request_threads[i], NULL) == 0,
+                        "parallel insert thread should join") != SUCCESS ||
+            assert_true(request_args[i].status == SUCCESS,
+                        "parallel insert request should succeed") != SUCCESS ||
+            assert_true(strstr(request_args[i].response, "200 OK") != NULL,
+                        "parallel insert response should return 200") != SUCCESS) {
+            server_stop(&server);
+            server_join(&server);
+            server_destroy(&server);
+            return FAILURE;
+        }
+        free((void *)request_args[i].body);
+        request_args[i].body = NULL;
+    }
+
+    if (assert_true(send_http_request(server_get_port(&server),
+                                      "{\"sql\":\"SELECT name FROM api_parallel_rows;\"}",
+                                      response, sizeof(response)) == SUCCESS,
+                    "parallel insert verification select should succeed") != SUCCESS ||
+        assert_true(strstr(response, "200 OK") != NULL,
+                    "parallel insert verification should return 200") != SUCCESS ||
+        assert_true(count_occurrences(response, "worker_") == 6,
+                    "parallel inserts should all be visible in the final SELECT") != SUCCESS) {
         server_stop(&server);
         server_join(&server);
         server_destroy(&server);
@@ -366,8 +560,12 @@ static int test_queue_overload(void) {
 int main(void) {
     if (assert_true(test_basic_api_flow() == SUCCESS,
                     "basic API flow should pass") != SUCCESS ||
+        assert_true(test_http_error_mapping() == SUCCESS,
+                    "HTTP error mapping should pass") != SUCCESS ||
         assert_true(test_parallel_api_processing() == SUCCESS,
                     "parallel API processing should pass") != SUCCESS ||
+        assert_true(test_parallel_insert_integrity() == SUCCESS,
+                    "parallel insert integrity should pass") != SUCCESS ||
         assert_true(test_queue_overload() == SUCCESS,
                     "queue overload handling should pass") != SUCCESS) {
         return EXIT_FAILURE;
