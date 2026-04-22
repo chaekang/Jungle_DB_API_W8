@@ -390,30 +390,45 @@ static int executor_collect_rows_by_scan(const TableRuntime *table,
  * INSERT 문 하나를 메모리 런타임 계층으로 실행하고 결과 메시지를 출력한다.
  */
 static int executor_execute_insert(const InsertStatement *stmt) {
+    TableRuntimeHandle handle;
     TableRuntime *table;
     int row_index;
+    int status;
 
     if (stmt == NULL) {
         return FAILURE;
     }
 
-    table = table_get_or_load(stmt->table_name);
-    if (table == NULL) {
+    handle.entry = NULL;
+    status = table_runtime_acquire(stmt->table_name, &handle);
+    if (status != SUCCESS) {
         return FAILURE;
     }
 
-    if (table_insert_row(table, stmt, &row_index) != SUCCESS) {
-        return FAILURE;
+    table = table_runtime_handle_table(&handle);
+    if (table == NULL) {
+        status = FAILURE;
+        goto cleanup;
+    }
+
+    status = table_insert_row(table, stmt, &row_index);
+    if (status != SUCCESS) {
+        goto cleanup;
     }
 
     printf("1 row inserted into %s.\n", stmt->table_name);
-    return SUCCESS;
+    status = SUCCESS;
+
+cleanup:
+    table_runtime_release(&handle);
+    return status;
 }
 
 /*
  * SELECT 문 하나를 메모리 런타임에서 실행하고 표 형태로 출력한다.
  */
 static int executor_execute_select(const SelectStatement *stmt) {
+    TableRuntimeHandle handle;
     TableRuntime *table;
     int selected_indices[MAX_COLUMNS];
     char headers[MAX_COLUMNS][MAX_IDENTIFIER_LEN];
@@ -427,20 +442,28 @@ static int executor_execute_select(const SelectStatement *stmt) {
         return FAILURE;
     }
 
-    table = table_get_or_load(stmt->table_name);
-    if (table == NULL) {
+    handle.entry = NULL;
+    status = table_runtime_acquire(stmt->table_name, &handle);
+    if (status != SUCCESS) {
         return FAILURE;
+    }
+
+    table = table_runtime_handle_table(&handle);
+    if (table == NULL) {
+        status = FAILURE;
+        goto cleanup;
     }
 
     if (!table->loaded) {
         fprintf(stderr, "Error: Table '%s' not found in runtime.\n", stmt->table_name);
-        return FAILURE;
+        status = FAILURE;
+        goto cleanup;
     }
 
     status = executor_prepare_projection(stmt, table, selected_indices, headers,
                                          &selected_count);
     if (status != SUCCESS) {
-        return FAILURE;
+        goto cleanup;
     }
 
     result_rows = NULL;
@@ -460,7 +483,7 @@ static int executor_execute_select(const SelectStatement *stmt) {
 
     if (status != SUCCESS) {
         executor_free_result_rows(result_rows, result_row_count, selected_count);
-        return FAILURE;
+        goto cleanup;
     }
 
     executor_print_table(headers, selected_count, result_rows, result_row_count);
@@ -468,7 +491,11 @@ static int executor_execute_select(const SelectStatement *stmt) {
            result_row_count == 1 ? "" : "s");
 
     executor_free_result_rows(result_rows, result_row_count, selected_count);
-    return SUCCESS;
+    status = SUCCESS;
+
+cleanup:
+    table_runtime_release(&handle);
+    return status;
 }
 
 /*

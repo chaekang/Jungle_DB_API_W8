@@ -75,39 +75,77 @@ static void prepare_delete(SqlStatement *statement, const char *table_name,
 
 int main(void) {
     SqlStatement statement;
+    TableRuntimeHandle users_handle;
+    TableRuntimeHandle orders_handle;
     TableRuntime *table;
     char **row;
     int row_index;
 
     table_runtime_cleanup();
+    users_handle.entry = NULL;
+    orders_handle.entry = NULL;
 
     prepare_insert(&statement, "executor_users", 0, "", "Alice", "30");
     if (assert_true(executor_execute(&statement) == SUCCESS,
-                    "executor should insert first row into runtime") != SUCCESS) {
+                    "executor should insert first row into executor_users") != SUCCESS) {
         return EXIT_FAILURE;
     }
 
     prepare_insert(&statement, "executor_users", 0, "", "Bob", "25");
     if (assert_true(executor_execute(&statement) == SUCCESS,
-                    "executor should insert second row into runtime") != SUCCESS) {
+                    "executor should insert second row into executor_users") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
 
-    table = table_get_or_load("executor_users");
-    if (assert_true(table != NULL, "runtime table should be available after insert") != SUCCESS ||
-        assert_true(table->row_count == 2, "runtime should contain two rows") != SUCCESS ||
+    if (assert_true(table_runtime_acquire("executor_users", &users_handle) == SUCCESS,
+                    "should acquire executor_users state") != SUCCESS) {
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+
+    table = table_runtime_handle_table(&users_handle);
+    if (assert_true(table != NULL, "executor_users table should be available after insert") != SUCCESS ||
+        assert_true(table->row_count == 2, "executor_users should contain two rows") != SUCCESS ||
         assert_true(table->id_index_root != NULL, "id index should be built on insert") != SUCCESS ||
         assert_true(bptree_search(table->id_index_root, 2, &row_index) == SUCCESS,
                     "id index should find the second row") != SUCCESS ||
         assert_true(row_index == 1, "id 2 should map to row_index 1") != SUCCESS) {
+        table_runtime_release(&users_handle);
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+    table_runtime_release(&users_handle);
+
+    prepare_insert(&statement, "executor_orders", 0, "", "Order-1", "10");
+    if (assert_true(executor_execute(&statement) == SUCCESS,
+                    "executor should insert into executor_orders independently") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
 
+    if (assert_true(table_runtime_acquire("executor_orders", &orders_handle) == SUCCESS,
+                    "should acquire executor_orders state") != SUCCESS) {
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+
+    table = table_runtime_handle_table(&orders_handle);
+    row = table_get_row_by_slot(table, 0);
+    if (assert_true(table != NULL, "executor_orders table should exist") != SUCCESS ||
+        assert_true(table->row_count == 1, "executor_orders should contain one row") != SUCCESS ||
+        assert_true(table->next_id == 2, "executor_orders next_id should advance independently") != SUCCESS ||
+        assert_true(row != NULL, "executor_orders row lookup should succeed") != SUCCESS ||
+        assert_true(strcmp(row[1], "Order-1") == 0, "executor_orders data should be isolated") != SUCCESS) {
+        table_runtime_release(&orders_handle);
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+    table_runtime_release(&orders_handle);
+
     prepare_select(&statement, "executor_users", "name", "id", "=", "2");
     if (assert_true(executor_execute(&statement) == SUCCESS,
-                    "executor should use id index for id equality select") != SUCCESS) {
+                    "executor should use id index for executor_users id equality select") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
@@ -116,7 +154,7 @@ int main(void) {
     if (assert_true(executor_execute(&statement) == SUCCESS,
                     "executor should use linear scan for non-id select") != SUCCESS ||
         assert_true(executor_execute(&statement) == SUCCESS,
-                    "repeated select should stay stable") != SUCCESS) {
+                    "repeated select should stay stable after other table activity") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
@@ -135,15 +173,23 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
-    table = table_get_or_load("executor_users");
+    if (assert_true(table_runtime_acquire("executor_users", &users_handle) == SUCCESS,
+                    "executor_users should still be acquireable after cross-table access") != SUCCESS) {
+        table_runtime_cleanup();
+        return EXIT_FAILURE;
+    }
+
+    table = table_runtime_handle_table(&users_handle);
     row = table_get_row_by_slot(table, 1);
     if (assert_true(row != NULL, "runtime row lookup should still succeed") != SUCCESS ||
         assert_true(strcmp(row[0], "2") == 0, "second row id should remain 2") != SUCCESS ||
         assert_true(strcmp(row[1], "Bob") == 0, "Bob should remain after delete failure") != SUCCESS ||
-        assert_true(table->row_count == 2, "failed operations should not change row count") != SUCCESS) {
+        assert_true(table->row_count == 2, "executor_users row count should stay stable") != SUCCESS) {
+        table_runtime_release(&users_handle);
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
+    table_runtime_release(&users_handle);
 
     table_runtime_cleanup();
     puts("[PASS] executor");
