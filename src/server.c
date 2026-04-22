@@ -55,6 +55,7 @@ typedef enum {
 static volatile sig_atomic_t server_stop_requested = 0;
 static int server_listener_fd = -1;
 
+// 추가구현: Ctrl+C/SIGTERM을 받으면 accept loop를 멈추게 한다.
 static void server_request_shutdown(int signal_number) {
     (void)signal_number;
     server_stop_requested = 1;
@@ -64,6 +65,10 @@ static void server_request_shutdown(int signal_number) {
     }
 }
 
+/*
+ * 요청 큐 초기화.
+ * main thread가 accept한 client fd를 worker thread에게 넘기기 위해 쓴다.
+ */
 static int server_queue_init(ServerRequestQueue *queue) {
     if (queue == NULL) {
         return FAILURE;
@@ -82,6 +87,7 @@ static int server_queue_init(ServerRequestQueue *queue) {
     return SUCCESS;
 }
 
+// 추가구현: 요청 큐가 사용한 mutex/condition variable을 정리한다.
 static void server_queue_destroy(ServerRequestQueue *queue) {
     if (queue == NULL) {
         return;
@@ -91,6 +97,9 @@ static void server_queue_destroy(ServerRequestQueue *queue) {
     pthread_mutex_destroy(&queue->mutex);
 }
 
+/*
+ * 서버 종료 시 worker들이 queue pop에서 빠져나오도록 깨운다.
+ */
 static void server_queue_shutdown(ServerRequestQueue *queue) {
     if (queue == NULL) {
         return;
@@ -102,6 +111,10 @@ static void server_queue_shutdown(ServerRequestQueue *queue) {
     pthread_mutex_unlock(&queue->mutex);
 }
 
+/*
+ * accept thread가 새 client fd를 bounded queue에 넣는다.
+ * 큐가 꽉 차면 FAILURE를 반환하고, 호출자는 503 응답을 보낸다.
+ */
 static int server_queue_push(ServerRequestQueue *queue, int client_fd) {
     if (queue == NULL) {
         return FAILURE;
@@ -121,6 +134,10 @@ static int server_queue_push(ServerRequestQueue *queue, int client_fd) {
     return SUCCESS;
 }
 
+/*
+ * worker thread가 처리할 요청 하나를 queue에서 꺼낸다.
+ * queue가 비어 있으면 condition variable에서 기다린다.
+ */
 static int server_queue_pop(ServerRequestQueue *queue, ServerRequest *out_request) {
     if (queue == NULL || out_request == NULL) {
         return FAILURE;
@@ -143,6 +160,7 @@ static int server_queue_pop(ServerRequestQueue *queue, ServerRequest *out_reques
     return SUCCESS;
 }
 
+// 추가구현: JSON 응답 문자열을 만들 동적 버퍼를 초기화한다.
 static int server_buffer_init(ServerBuffer *buffer) {
     if (buffer == NULL) {
         return FAILURE;
@@ -159,6 +177,7 @@ static int server_buffer_init(ServerBuffer *buffer) {
     return SUCCESS;
 }
 
+// 추가구현: 동적 응답 버퍼 메모리를 해제한다.
 static void server_buffer_free(ServerBuffer *buffer) {
     if (buffer == NULL) {
         return;
@@ -170,6 +189,7 @@ static void server_buffer_free(ServerBuffer *buffer) {
     buffer->capacity = 0;
 }
 
+// 추가구현: 응답 버퍼에 문자열을 더 붙일 공간을 확보한다.
 static int server_buffer_reserve(ServerBuffer *buffer, size_t extra_length) {
     size_t required;
     size_t new_capacity;
@@ -199,6 +219,7 @@ static int server_buffer_reserve(ServerBuffer *buffer, size_t extra_length) {
     return SUCCESS;
 }
 
+// 추가구현: 응답 버퍼 뒤에 지정 길이만큼 문자열을 붙인다.
 static int server_buffer_append_n(ServerBuffer *buffer,
                                   const char *text,
                                   size_t length) {
@@ -216,6 +237,7 @@ static int server_buffer_append_n(ServerBuffer *buffer,
     return SUCCESS;
 }
 
+// 추가구현: 응답 버퍼 뒤에 C 문자열 하나를 붙인다.
 static int server_buffer_append(ServerBuffer *buffer, const char *text) {
     if (text == NULL) {
         return FAILURE;
@@ -224,10 +246,12 @@ static int server_buffer_append(ServerBuffer *buffer, const char *text) {
     return server_buffer_append_n(buffer, text, strlen(text));
 }
 
+// 추가구현: 응답 버퍼 뒤에 문자 하나를 붙인다.
 static int server_buffer_append_char(ServerBuffer *buffer, char value) {
     return server_buffer_append_n(buffer, &value, 1);
 }
 
+// 추가구현: JSON 문자열에 필요한 따옴표/역슬래시/개행 escape를 처리한다.
 static int server_buffer_append_json_string(ServerBuffer *buffer,
                                             const char *text) {
     const unsigned char *cursor;
@@ -275,6 +299,10 @@ static int server_buffer_append_json_string(ServerBuffer *buffer,
     return server_buffer_append_char(buffer, '"');
 }
 
+/*
+ * DB 엔진의 QueryResult를 HTTP body로 보낼 JSON 문자열로 바꾼다.
+ * DB는 HTTP를 모르고, 서버만 JSON 응답 형식을 책임진다.
+ */
 static int server_build_json_response(const QueryResult *result,
                                       char **out_body) {
     ServerBuffer body;
@@ -373,6 +401,7 @@ static int server_build_json_response(const QueryResult *result,
     return SUCCESS;
 }
 
+// 추가구현: send가 중간에 끊겨도 남은 바이트를 끝까지 전송한다.
 static int server_send_all(int fd, const char *data, size_t length) {
     size_t sent_total;
 
@@ -394,6 +423,9 @@ static int server_send_all(int fd, const char *data, size_t length) {
     return SUCCESS;
 }
 
+/*
+ * HTTP status line/header/body를 client socket으로 보낸다.
+ */
 static int server_send_response(int fd, int status_code,
                                 const char *reason, const char *body) {
     char header[512];
@@ -423,6 +455,7 @@ static int server_send_response(int fd, int status_code,
     return server_send_all(fd, body, body_length);
 }
 
+// 추가구현: 에러 상황에서 바로 보낼 JSON 에러 응답을 만든다.
 static int server_send_json_error(int fd, int status_code,
                                   const char *reason, const char *error) {
     QueryResult result;
@@ -441,6 +474,7 @@ static int server_send_json_error(int fd, int status_code,
     return status;
 }
 
+// 추가구현: HTTP header가 끝나는 \r\n\r\n 위치를 찾는다.
 static size_t server_find_header_end(const char *buffer, size_t length) {
     size_t i;
 
@@ -458,6 +492,7 @@ static size_t server_find_header_end(const char *buffer, size_t length) {
     return (size_t)-1;
 }
 
+// 추가구현: header 이름을 대소문자 구분 없이 비교한다.
 static int server_header_name_matches(const char *line, size_t line_length,
                                       const char *name) {
     size_t name_length;
@@ -482,6 +517,7 @@ static int server_header_name_matches(const char *line, size_t line_length,
     return 1;
 }
 
+// 추가구현: HTTP header에서 Content-Length 값을 읽는다.
 static int server_parse_content_length(const char *buffer,
                                        size_t header_end,
                                        size_t *out_length) {
@@ -529,6 +565,10 @@ static int server_parse_content_length(const char *buffer,
     return SUCCESS;
 }
 
+/*
+ * client socket에서 HTTP request 전체를 읽는다.
+ * MVP 서버라서 Content-Length가 있는 일반 요청만 지원하고 chunked 요청은 다루지 않는다.
+ */
 static ServerReadStatus server_read_http_request(int fd,
                                                  char *buffer,
                                                  size_t buffer_size,
@@ -590,6 +630,10 @@ static ServerReadStatus server_read_http_request(int fd,
     return SERVER_READ_TOO_LARGE;
 }
 
+/*
+ * 첫 줄에서 HTTP method와 path만 뽑는다.
+ * 이 서버는 POST /query만 실제 API로 허용한다.
+ */
 static int server_parse_request_line(const char *request,
                                      char *method,
                                      size_t method_size,
@@ -614,12 +658,14 @@ static int server_parse_request_line(const char *request,
     return SUCCESS;
 }
 
+// 추가구현: JSON 파싱 중 공백 문자를 건너뛴다.
 static void server_skip_json_space(const char **cursor, const char *end) {
     while (*cursor < end && isspace((unsigned char)**cursor)) {
         (*cursor)++;
     }
 }
 
+// 추가구현: JSON 문자열 값 하나를 읽고 escape 문자를 간단히 처리한다.
 static int server_read_json_string(const char **cursor,
                                    const char *end,
                                    char *out,
@@ -674,6 +720,10 @@ static int server_read_json_string(const char **cursor,
     return FAILURE;
 }
 
+/*
+ * 요청 body에서 {"sql":"..."} 형태의 sql 문자열만 꺼낸다.
+ * SQL 해석은 여기서 하지 않고 engine_execute_sql()에 그대로 넘긴다.
+ */
 static int server_extract_sql_from_json(const char *body,
                                         size_t body_length,
                                         char *out_sql,
@@ -714,6 +764,10 @@ static int server_extract_sql_from_json(const char *body,
     return FAILURE;
 }
 
+/*
+ * DB 실행 결과를 HTTP status code로 매핑한다.
+ * 성공은 200, 없는 테이블은 404, 나머지 SQL 오류는 400으로 본다.
+ */
 static int server_status_for_result(const QueryResult *result) {
     if (result == NULL || result->success) {
         return 200;
@@ -727,6 +781,7 @@ static int server_status_for_result(const QueryResult *result) {
     return 400;
 }
 
+// 추가구현: status code 숫자에 맞는 HTTP reason phrase를 반환한다.
 static const char *server_reason_phrase(int status_code) {
     switch (status_code) {
         case 200:
@@ -746,6 +801,10 @@ static const char *server_reason_phrase(int status_code) {
     }
 }
 
+/*
+ * worker 하나가 client 요청 하나를 끝까지 처리하는 핵심 함수.
+ * HTTP 읽기 -> route 검증 -> JSON에서 SQL 추출 -> DB engine 실행 -> JSON 응답 순서다.
+ */
 static void server_handle_client(int client_fd) {
     char request_buffer[SERVER_REQUEST_BUFFER_SIZE];
     char method[16];
@@ -821,6 +880,10 @@ static void server_handle_client(int client_fd) {
     query_result_free(&result);
 }
 
+/*
+ * worker thread의 main loop.
+ * queue에서 client fd를 하나씩 꺼내 server_handle_client()로 처리한다.
+ */
 static void *server_worker_main(void *arg) {
     ServerRequestQueue *queue;
     ServerRequest request;
@@ -834,6 +897,10 @@ static void *server_worker_main(void *arg) {
     return NULL;
 }
 
+/*
+ * listen socket을 만들고 bind/listen까지 끝낸다.
+ * 여기서 열린 fd를 main accept loop가 계속 사용한다.
+ */
 static int server_create_listener(int port) {
     int fd;
     int reuse;
@@ -872,6 +939,7 @@ static int server_create_listener(int port) {
     return fd;
 }
 
+// 추가구현: SIGINT/SIGTERM/SIGPIPE 처리 방식을 등록한다.
 static void server_install_signal_handlers(void) {
     struct sigaction action;
 
@@ -883,6 +951,10 @@ static void server_install_signal_handlers(void) {
     signal(SIGPIPE, SIG_IGN);
 }
 
+/*
+ * 서버의 전체 진입점.
+ * queue 생성 -> listen socket 생성 -> worker 8개 시작 -> accept loop 실행 순서로 동작한다.
+ */
 int server_run(int port) {
     ServerRequestQueue queue;
     pthread_t workers[SERVER_WORKER_COUNT];
