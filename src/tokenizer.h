@@ -29,17 +29,18 @@ typedef struct {
 Token *tokenizer_tokenize(const char *sql, int *token_count);
 
 /*
- * 토크나이저가 보관 중인 캐시를 모두 해제한다.
+ * 이전 캐시 API와의 호환성을 위한 no-op이다.
+ * 현재 토크나이저는 서버 동시성을 위해 전역 캐시를 사용하지 않는다.
  */
 void tokenizer_cleanup_cache(void);
 
 /*
- * 현재 캐시에 저장된 SQL 문 개수를 반환한다.
+ * 캐시를 사용하지 않으므로 항상 0을 반환한다.
  */
 int tokenizer_get_cache_entry_count(void);
 
 /*
- * 마지막 캐시 정리 이후 발생한 캐시 히트 수를 반환한다.
+ * 캐시를 사용하지 않으므로 항상 0을 반환한다.
  */
 int tokenizer_get_cache_hit_count(void);
 

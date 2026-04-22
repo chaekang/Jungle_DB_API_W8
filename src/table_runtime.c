@@ -1,3 +1,7 @@
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+
 #include "table_runtime.h"
 
 #include "bptree.h"
@@ -11,7 +15,7 @@
 
 typedef struct TableRuntimeEntry {
     TableRuntime table;
-    pthread_mutex_t lock;
+    pthread_rwlock_t lock;
     struct TableRuntimeEntry *next;
 } TableRuntimeEntry;
 
@@ -30,6 +34,9 @@ static int table_where_matches(int comparison, const char *op);
 static TableRuntimeEntry *table_runtime_find_entry_locked(const char *table_name);
 static TableRuntimeEntry *table_runtime_create_entry(const char *table_name);
 static void table_runtime_destroy_entry(TableRuntimeEntry *entry);
+static int table_runtime_acquire_locked_entry(TableRuntimeEntry *entry,
+                                              int write_lock,
+                                              TableRuntimeHandle *out_handle);
 
 static void table_free_owned_row(char **row, int col_count) {
     int i;
@@ -213,7 +220,7 @@ static TableRuntimeEntry *table_runtime_create_entry(const char *table_name) {
         return NULL;
     }
 
-    if (pthread_mutex_init(&entry->lock, NULL) != 0) {
+    if (pthread_rwlock_init(&entry->lock, NULL) != 0) {
         fprintf(stderr, "Error: Failed to initialize table runtime lock.\n");
         free(entry);
         return NULL;
@@ -230,8 +237,28 @@ static void table_runtime_destroy_entry(TableRuntimeEntry *entry) {
     }
 
     table_free(&entry->table);
-    pthread_mutex_destroy(&entry->lock);
+    pthread_rwlock_destroy(&entry->lock);
     free(entry);
+}
+
+static int table_runtime_acquire_locked_entry(TableRuntimeEntry *entry,
+                                              int write_lock,
+                                              TableRuntimeHandle *out_handle) {
+    int lock_status;
+
+    if (entry == NULL || out_handle == NULL) {
+        return FAILURE;
+    }
+
+    lock_status = write_lock ? pthread_rwlock_wrlock(&entry->lock)
+                             : pthread_rwlock_rdlock(&entry->lock);
+    if (lock_status != 0) {
+        fprintf(stderr, "Error: Failed to lock table runtime.\n");
+        return FAILURE;
+    }
+
+    out_handle->entry = entry;
+    return SUCCESS;
 }
 
 void table_init(TableRuntime *table) {
@@ -290,7 +317,10 @@ int table_reserve_if_needed(TableRuntime *table) {
     return SUCCESS;
 }
 
-int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle) {
+static int table_runtime_acquire_entry(const char *table_name,
+                                       TableRuntimeHandle *out_handle,
+                                       int create_if_missing,
+                                       int write_lock) {
     TableRuntimeEntry *entry;
 
     if (table_name == NULL || out_handle == NULL) {
@@ -309,7 +339,7 @@ int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle
     }
 
     entry = table_runtime_find_entry_locked(table_name);
-    if (entry == NULL) {
+    if (entry == NULL && create_if_missing) {
         entry = table_runtime_create_entry(table_name);
     }
 
@@ -319,13 +349,21 @@ int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle
         return FAILURE;
     }
 
-    if (pthread_mutex_lock(&entry->lock) != 0) {
-        fprintf(stderr, "Error: Failed to lock table runtime.\n");
-        return FAILURE;
-    }
+    return table_runtime_acquire_locked_entry(entry, write_lock, out_handle);
+}
 
-    out_handle->entry = entry;
-    return SUCCESS;
+int table_runtime_acquire_read(const char *table_name,
+                               TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_entry(table_name, out_handle, 0, 0);
+}
+
+int table_runtime_acquire_write(const char *table_name,
+                                TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_entry(table_name, out_handle, 1, 1);
+}
+
+int table_runtime_acquire(const char *table_name, TableRuntimeHandle *out_handle) {
+    return table_runtime_acquire_write(table_name, out_handle);
 }
 
 TableRuntime *table_runtime_handle_table(TableRuntimeHandle *handle) {
@@ -341,7 +379,7 @@ void table_runtime_release(TableRuntimeHandle *handle) {
         return;
     }
 
-    pthread_mutex_unlock(&handle->entry->lock);
+    pthread_rwlock_unlock(&handle->entry->lock);
     handle->entry = NULL;
 }
 
@@ -490,4 +528,24 @@ void table_runtime_cleanup(void) {
         table_runtime_destroy_entry(entry);
         entry = next;
     }
+}
+
+int table_runtime_registry_count(void) {
+    TableRuntimeEntry *entry;
+    int count;
+
+    count = 0;
+    if (pthread_mutex_lock(&table_runtime_registry_lock) != 0) {
+        fprintf(stderr, "Error: Failed to lock table runtime registry.\n");
+        return FAILURE;
+    }
+
+    entry = table_runtime_registry_head;
+    while (entry != NULL) {
+        count++;
+        entry = entry->next;
+    }
+
+    pthread_mutex_unlock(&table_runtime_registry_lock);
+    return count;
 }

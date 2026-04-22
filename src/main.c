@@ -1,14 +1,96 @@
 #include "benchmark.h"
-#include "executor.h"
-#include "parser.h"
-#include "table_runtime.h"
-#include "tokenizer.h"
+#include "engine.h"
+#include "server.h"
 #include "utils.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/*
+ * SELECT 표 출력용 가로 경계선을 한 줄 출력한다.
+ */
+static void main_print_border(const int *widths, int col_count) {
+    int i;
+    int j;
+
+    for (i = 0; i < col_count; i++) {
+        putchar('+');
+        for (j = 0; j < widths[i] + 2; j++) {
+            putchar('-');
+        }
+    }
+    puts("+");
+}
+
+/*
+ * QueryResult의 테이블 결과를 기존 CLI와 같은 표 형태로 출력한다.
+ */
+static void main_print_table_result(const QueryResult *result) {
+    int widths[MAX_COLUMNS];
+    int i;
+    int j;
+    int cell_width;
+
+    if (result == NULL) {
+        return;
+    }
+
+    for (i = 0; i < result->column_count; i++) {
+        widths[i] = utils_display_width(result->columns[i]);
+    }
+
+    for (i = 0; i < result->row_count; i++) {
+        for (j = 0; j < result->column_count; j++) {
+            cell_width = utils_display_width(result->rows[i][j]);
+            if (cell_width > widths[j]) {
+                widths[j] = cell_width;
+            }
+        }
+    }
+
+    main_print_border(widths, result->column_count);
+    for (i = 0; i < result->column_count; i++) {
+        printf("| ");
+        utils_print_padded(stdout, result->columns[i], widths[i]);
+        putchar(' ');
+    }
+    puts("|");
+    main_print_border(widths, result->column_count);
+
+    for (i = 0; i < result->row_count; i++) {
+        for (j = 0; j < result->column_count; j++) {
+            printf("| ");
+            utils_print_padded(stdout, result->rows[i][j], widths[j]);
+            putchar(' ');
+        }
+        puts("|");
+    }
+
+    main_print_border(widths, result->column_count);
+    printf("%d row%s selected.\n", result->row_count,
+           result->row_count == 1 ? "" : "s");
+}
+
+static void main_print_query_result(const QueryResult *result) {
+    if (result == NULL) {
+        return;
+    }
+
+    if (!result->success) {
+        fprintf(stderr, "Error: %s\n", result->error);
+        return;
+    }
+
+    if (result->kind == QUERY_RESULT_MESSAGE) {
+        puts(result->message);
+        return;
+    }
+
+    main_print_table_result(result);
+}
 
 /*
  * 문자열에서 연속된 공백을 건너뛰고 다음 유효 위치를 찾는다.
@@ -26,10 +108,8 @@ static size_t main_skip_whitespace(const char *text, size_t index) {
  * 빈 문장이거나 정상 실행되면 SUCCESS를 반환한다.
  */
 static int main_process_sql_statement(const char *sql) {
-    Token *tokens;
-    int token_count;
-    SqlStatement statement;
     char *working_sql;
+    QueryResult result;
     int status;
 
     if (sql == NULL) {
@@ -47,19 +127,10 @@ static int main_process_sql_statement(const char *sql) {
         return SUCCESS;
     }
 
-    tokens = tokenizer_tokenize(working_sql, &token_count);
-    if (tokens == NULL || token_count == 0) {
-        free(tokens);
-        free(working_sql);
-        return FAILURE;
-    }
-
-    status = parser_parse(tokens, token_count, &statement);
-    if (status == SUCCESS) {
-        status = executor_execute(&statement);
-    }
-
-    free(tokens);
+    query_result_init(&result);
+    status = engine_execute_sql(working_sql, &result);
+    main_print_query_result(&result);
+    query_result_free(&result);
     free(working_sql);
     return status;
 }
@@ -233,30 +304,61 @@ static int main_run_repl_mode(void) {
     return SUCCESS;
 }
 
+static int main_parse_port(const char *text, int *out_port) {
+    char *end;
+    long port;
+
+    if (text == NULL || out_port == NULL) {
+        return FAILURE;
+    }
+
+    errno = 0;
+    port = strtol(text, &end, 10);
+    if (errno != 0 || end == text || *end != '\0' ||
+        port <= 0 || port > 65535) {
+        return FAILURE;
+    }
+
+    *out_port = (int)port;
+    return SUCCESS;
+}
+
 /*
- * argv에 따라 파일 모드 또는 REPL 모드를 선택하고 종료 전에 파서 캐시를 정리한다.
+ * argv에 따라 파일 모드, REPL, benchmark, server 모드를 선택한다.
  * 정상 종료면 EXIT_SUCCESS, 아니면 EXIT_FAILURE를 반환한다.
  */
 int main(int argc, char *argv[]) {
     int status;
+    int port;
 
-    if (argc > 2) {
-        fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark]\n", argv[0]);
+    if (argc > 3) {
+        fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark|--server [port]]\n",
+                argv[0]);
         return EXIT_FAILURE;
     }
 
-    if (argc == 2 &&
+    if (argc >= 2 && utils_equals_ignore_case(argv[1], "--server")) {
+        port = 8080;
+        if (argc == 3 && main_parse_port(argv[2], &port) != SUCCESS) {
+            fprintf(stderr, "Error: Invalid server port '%s'.\n", argv[2]);
+            return EXIT_FAILURE;
+        }
+        status = server_run(port);
+    } else if (argc == 2 &&
         (utils_equals_ignore_case(argv[1], "--benchmark") ||
          utils_equals_ignore_case(argv[1], "benchmark"))) {
         BenchmarkConfig config = benchmark_default_config();
         status = benchmark_run(&config);
+    } else if (argc == 3) {
+        fprintf(stderr, "Usage: %s [sql_file|--benchmark|benchmark|--server [port]]\n",
+                argv[0]);
+        return EXIT_FAILURE;
     } else if (argc == 2) {
         status = main_run_file_mode(argv[1]);
     } else {
         status = main_run_repl_mode();
     }
 
-    table_runtime_cleanup();
-    tokenizer_cleanup_cache();
+    engine_shutdown();
     return status == SUCCESS ? EXIT_SUCCESS : EXIT_FAILURE;
 }
