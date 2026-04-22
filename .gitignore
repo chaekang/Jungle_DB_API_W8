@@ -1,17 +1,11 @@
-cmake-build-*/
-CMakeCache.txt
-CMakeFiles/
-Testing/
-Makefile
-cmake_install.cmake
-compile_commands.json
-CTestTestfile.cmake
+/build/
+/sql_processor
+/data/*.csv
+.vscode
 
-data/*.idx
-data/*.idx.boot
+# gemini-cli settings
+.gemini/
 
-benchmark-results/
-benchmark-datasets/
-
-jungle_mini_db
-mini_db
+# GitHub App credentials
+gha-creds-*.json
+.DS_Store
