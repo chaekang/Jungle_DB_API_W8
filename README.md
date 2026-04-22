@@ -153,7 +153,8 @@ queue 크기는 단순히 "클수록 좋다"로 결정할 수 없었습니다.
 
 정리하면, 우리는 "이론적으로 더 세분화된 구조"보다 "현재 범위에서 더 단순하고 명확한 구조"를 택했습니다.
 
-![Uploading mid_state_exposure.png…]()
+<img width="1672" height="941" alt="image" src="https://github.com/user-attachments/assets/daeefd9a-0e23-428c-9e5c-fbfc545551fc" />
+
 
 ## 5. 실행 방법
 
