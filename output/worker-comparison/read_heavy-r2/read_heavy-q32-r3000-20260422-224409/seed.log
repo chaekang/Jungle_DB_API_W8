@@ -1,0 +1,33 @@
+time="2026-04-22T22:44:09+09:00" level=warning msg="Error from API server" error="listen tcp 127.0.0.1:6565: bind: address already in use"
+
+
+  █ THRESHOLDS 
+
+    http_req_failed
+    ✓ 'rate==0' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 5000    15827.743502/s
+    checks_succeeded...: 100.00% 5000 out of 5000
+    checks_failed......: 0.00%   0 out of 5000
+
+    ✓ seed status is 200
+
+    HTTP
+    http_req_duration..............: avg=345.05µs min=37µs     med=248µs    max=28ms    p(90)=569µs    p(95)=768.04µs
+      { expected_response:true }...: avg=345.05µs min=37µs     med=248µs    max=28ms    p(90)=569µs    p(95)=768.04µs
+    http_req_failed................: 0.00%  0 out of 5000
+    http_reqs......................: 5000   15827.743502/s
+
+    EXECUTION
+    iteration_duration.............: avg=622.55µs min=112.29µs med=454.52µs max=32.95ms p(90)=947.48µs p(95)=1.26ms  
+    iterations.....................: 5000   15827.743502/s
+
+    NETWORK
+    data_received..................: 755 kB 2.4 MB/s
+    data_sent......................: 1.0 MB 3.2 MB/s
+
+
+

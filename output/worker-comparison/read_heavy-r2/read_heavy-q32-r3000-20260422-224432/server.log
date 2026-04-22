@@ -1,0 +1,19 @@
+Server listening on http://0.0.0.0:18132 (workers=2, queue=32, backlog=64)
+SERVER_SUMMARY_BEGIN
+worker_count=2
+queue_capacity=32
+total_requests_received=4080
+total_requests_completed=4080
+total_requests_failed=0
+total_503_responses=0
+total_queue_full_events=0
+enqueue_success_count=4080
+enqueue_fail_count=0
+max_queue_length_observed=10
+average_queue_length=2.682
+average_queue_wait_ms=1.165
+average_execution_ms=0.056
+average_total_response_ms=1.724
+throughput_success_rps=2303.624
+worker_busy_ratio=0.6441
+SERVER_SUMMARY_END

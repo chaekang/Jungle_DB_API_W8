@@ -1,0 +1,72 @@
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51406->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51412->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51408->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51405->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51422->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51420->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51419->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51418->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51417->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51416->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51415->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51414->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51413->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51407->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51421->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51411->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51409->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:40:59+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51404->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59477->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59481->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59478->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59480->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59796->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59795->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59794->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59792->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59791->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:62887->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:62917->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52752->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52751->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52750->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52749->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52748->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52747->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52746->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52745->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:05+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52753->127.0.0.1:18114: read: connection reset by peer"
+time="2026-04-22T22:41:08+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:62093->127.0.0.1:18114: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.861211/s
+    checks_succeeded...: 99.87% 29962 out of 30001
+    checks_failed......: 0.12%  39 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29962 / ✗ 39
+
+    CUSTOM
+    status_503.....................: 106    10.599156/s
+    success_duration...............: avg=0.097649 min=0.035    med=0.059    max=29.431  p(90)=0.106    p(95)=0.142   
+
+    HTTP
+    http_req_duration..............: avg=99.28µs  min=6µs      med=59µs     max=29.43ms p(90)=107µs    p(95)=148µs   
+      { expected_response:true }...: avg=97.64µs  min=35µs     med=59µs     max=29.43ms p(90)=106µs    p(95)=142µs   
+    http_req_failed................: 0.48%  145 out of 30001
+    http_reqs......................: 30001  2999.861211/s
+
+    EXECUTION
+    iteration_duration.............: avg=295.64µs min=101.91µs med=155.25µs max=43.52ms p(90)=252.12µs p(95)=325.12µs
+    iterations.....................: 30001  2999.861211/s
+    vus............................: 1      min=0            max=1   
+    vus_max........................: 1000   min=1000         max=1000
+
+    NETWORK
+    data_received..................: 5.1 MB 514 kB/s
+    data_sent......................: 5.4 MB 541 kB/s
+
+
+

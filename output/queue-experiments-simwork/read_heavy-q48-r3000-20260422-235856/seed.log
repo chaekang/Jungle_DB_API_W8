@@ -1,0 +1,32 @@
+
+
+  █ THRESHOLDS 
+
+    http_req_failed
+    ✓ 'rate==0' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 5000    12434.377572/s
+    checks_succeeded...: 100.00% 5000 out of 5000
+    checks_failed......: 0.00%   0 out of 5000
+
+    ✓ seed status is 200
+
+    HTTP
+    http_req_duration..............: avg=65.96µs  min=34µs    med=56µs    max=1.12ms p(90)=93µs     p(95)=123µs   
+      { expected_response:true }...: avg=65.96µs  min=34µs    med=56µs    max=1.12ms p(90)=93µs     p(95)=123µs   
+    http_req_failed................: 0.00%  0 out of 5000
+    http_reqs......................: 5000   12434.377572/s
+
+    EXECUTION
+    iteration_duration.............: avg=158.25µs min=95.91µs med=139.7µs max=1.25ms p(90)=213.59µs p(95)=266.03µs
+    iterations.....................: 5000   12434.377572/s
+
+    NETWORK
+    data_received..................: 755 kB 1.9 MB/s
+    data_sent......................: 1.0 MB 2.5 MB/s
+
+
+

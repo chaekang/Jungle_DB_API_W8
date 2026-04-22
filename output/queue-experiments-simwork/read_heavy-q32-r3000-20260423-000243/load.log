@@ -1,0 +1,85 @@
+time="2026-04-23T00:02:45+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:61144->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:45+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:61147->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:45+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:61145->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:45+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:61146->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:45+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:61149->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64303->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64294->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64293->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64307->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64309->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64302->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64306->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64310->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64301->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64304->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64308->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64299->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64298->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64297->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64300->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64305->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64295->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:46+09:00" level=info msg="2026/04/23 00:02:46 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-23T00:02:46+09:00" level=info msg="2026/04/23 00:02:46 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18203/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-23T00:02:46+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18203/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-23T00:02:47+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51068->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:47+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51066->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:47+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51067->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:47+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51055->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:47+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:51082->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:48+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53560->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:49+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57348->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:49+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57349->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:49+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57367->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:49+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57364->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:49+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57363->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:49+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57366->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:49+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57365->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:60538->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:60541->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:60536->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:60539->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:60533->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:53+09:00" level=info msg="2026/04/23 00:02:53 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-23T00:02:53+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53580->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:53+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18203/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-23T00:02:53+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53583->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:53+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53585->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:53+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53581->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:53+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53584->127.0.0.1:18203: read: connection reset by peer"
+time="2026-04-23T00:02:53+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53582->127.0.0.1:18203: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.883408/s
+    checks_succeeded...: 99.83% 29952 out of 30001
+    checks_failed......: 0.16%  49 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29952 / ✗ 49
+
+    CUSTOM
+    status_503.....................: 81     8.099415/s
+    success_duration...............: avg=0.211396 min=0.137 med=0.16     max=19.598  p(90)=0.183   p(95)=0.2885  
+
+    HTTP
+    http_req_duration..............: avg=212.26µs min=0s    med=160µs    max=19.59ms p(90)=184µs   p(95)=310µs   
+      { expected_response:true }...: avg=211.39µs min=137µs med=160µs    max=19.59ms p(90)=183µs   p(95)=288.49µs
+    http_req_failed................: 0.43%  130 out of 30001
+    http_reqs......................: 30001  2999.883408/s
+
+    EXECUTION
+    iteration_duration.............: avg=381.22µs min=210µs med=252.33µs max=26.1ms  p(90)=307.5µs p(95)=600µs   
+    iterations.....................: 30001  2999.883408/s
+    vus............................: 1      min=0            max=1   
+    vus_max........................: 1000   min=1000         max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 541 kB/s
+
+
+

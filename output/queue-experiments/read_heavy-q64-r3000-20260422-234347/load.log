@@ -1,0 +1,42 @@
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53121->127.0.0.1:18115: read: connection reset by peer"
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53120->127.0.0.1:18115: read: connection reset by peer"
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53118->127.0.0.1:18115: read: connection reset by peer"
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53117->127.0.0.1:18115: read: connection reset by peer"
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53112->127.0.0.1:18115: read: connection reset by peer"
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53115->127.0.0.1:18115: read: connection reset by peer"
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53114->127.0.0.1:18115: read: connection reset by peer"
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53113->127.0.0.1:18115: read: connection reset by peer"
+time="2026-04-22T23:43:50+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53116->127.0.0.1:18115: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.844713/s
+    checks_succeeded...: 99.97% 29992 out of 30001
+    checks_failed......: 0.02%  9 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29992 / ✗ 9
+
+    CUSTOM
+    status_503.....................: 21     2.099821/s
+    success_duration...............: avg=0.141089 min=0.037    med=0.059    max=38.935  p(90)=0.111    p(95)=0.423   
+
+    HTTP
+    http_req_duration..............: avg=142.43µs min=9µs      med=59µs     max=38.93ms p(90)=112µs    p(95)=440µs   
+      { expected_response:true }...: avg=141.08µs min=37µs     med=59µs     max=38.93ms p(90)=111µs    p(95)=423µs   
+    http_req_failed................: 0.09%  30 out of 30001
+    http_reqs......................: 30001  2999.844713/s
+
+    EXECUTION
+    iteration_duration.............: avg=545.5µs  min=108.25µs med=154.83µs max=78.84ms p(90)=264.08µs p(95)=882.04µs
+    iterations.....................: 30001  2999.844713/s
+    vus............................: 0      min=0           max=1   
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

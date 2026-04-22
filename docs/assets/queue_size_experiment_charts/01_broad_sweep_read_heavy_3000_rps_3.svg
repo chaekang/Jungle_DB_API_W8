@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1160" viewBox="0 0 1680 1160">
+<rect width="100%" height="100%" fill="#F8FAFC" />
+<text x="60" y="56" font-size="34" font-weight="700" fill="#0F172A" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">Queue Size Experiment Charts</text>
+<text x="60" y="88" font-size="22" font-weight="600" fill="#1D4ED8" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">read-heavy, `3000 rps`, 3회 중앙값</text>
+<text x="60" y="112" font-size="14" font-weight="400" fill="#475569" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">broad sweep / table 1</text>
+<rect x="1140" y="48" width="20" height="20" rx="6" fill="#9CA3AF" stroke="none" stroke-width="0" />
+<text x="1170" y="63" font-size="14" font-weight="600" fill="#334155" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q8</text>
+<rect x="1250" y="48" width="20" height="20" rx="6" fill="#2563EB" stroke="none" stroke-width="0" />
+<text x="1280" y="63" font-size="14" font-weight="600" fill="#334155" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q32</text>
+<rect x="1360" y="48" width="20" height="20" rx="6" fill="#059669" stroke="none" stroke-width="0" />
+<text x="1390" y="63" font-size="14" font-weight="600" fill="#334155" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q64</text>
+<rect x="1470" y="48" width="20" height="20" rx="6" fill="#7C3AED" stroke="none" stroke-width="0" />
+<text x="1500" y="63" font-size="14" font-weight="600" fill="#334155" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q128</text>
+<rect x="60" y="110" width="500" height="430" rx="18" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1" />
+<text x="78" y="138" font-size="17" font-weight="600" fill="#111827" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">completed</text>
+<line x1="76" y1="506" x2="544" y2="506" stroke="#CBD5E1" stroke-width="1" />
+<text x="76" y="526" font-size="11" font-weight="400" fill="#6B7280" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0</text>
+<text x="544" y="170" font-size="11" font-weight="400" fill="#6B7280" text-anchor="end" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">50,000</text>
+<rect x="92.0" y="301.9328" width="97.0" height="204.0672" rx="10" fill="#9CA3AF" stroke="none" stroke-width="0" />
+<text x="140.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q8</text>
+<text x="140.5" y="293.9328" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">29,320</text>
+<rect x="205.0" y="298.35536" width="97.0" height="207.64464" rx="10" fill="#2563EB" stroke="none" stroke-width="0" />
+<text x="253.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q32</text>
+<text x="253.5" y="290.35536" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">29,834</text>
+<rect x="318.0" y="297.19304" width="97.0" height="208.80696" rx="10" fill="#059669" stroke="none" stroke-width="0" />
+<text x="366.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q64</text>
+<text x="366.5" y="289.19304" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">30,001</text>
+<rect x="431.0" y="297.41576" width="97.0" height="208.58424000000002" rx="10" fill="#7C3AED" stroke="none" stroke-width="0" />
+<text x="479.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q128</text>
+<text x="479.5" y="289.41576" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">29,969</text>
+<rect x="590" y="110" width="500" height="430" rx="18" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1" />
+<text x="608" y="138" font-size="17" font-weight="600" fill="#111827" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">failed</text>
+<line x1="606" y1="506" x2="1074" y2="506" stroke="#CBD5E1" stroke-width="1" />
+<text x="606" y="526" font-size="11" font-weight="400" fill="#6B7280" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0</text>
+<text x="1074" y="170" font-size="11" font-weight="400" fill="#6B7280" text-anchor="end" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">1,000</text>
+<rect x="622.0" y="269.01199999999994" width="97.0" height="236.98800000000003" rx="10" fill="#9CA3AF" stroke="none" stroke-width="0" />
+<text x="670.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q8</text>
+<text x="670.5" y="261.01199999999994" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">681</text>
+<rect x="735.0" y="447.884" width="97.0" height="58.11600000000001" rx="10" fill="#2563EB" stroke="none" stroke-width="0" />
+<text x="783.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q32</text>
+<text x="783.5" y="439.884" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">167</text>
+<rect x="848.0" y="504" width="97.0" height="2" rx="10" fill="#059669" stroke="none" stroke-width="0" />
+<text x="896.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q64</text>
+<text x="896.5" y="496" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0</text>
+<rect x="961.0" y="495.212" width="97.0" height="10.788" rx="10" fill="#7C3AED" stroke="none" stroke-width="0" />
+<text x="1009.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q128</text>
+<text x="1009.5" y="487.212" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">31</text>
+<rect x="1120" y="110" width="500" height="430" rx="18" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1" />
+<text x="1138" y="138" font-size="17" font-weight="600" fill="#111827" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">503</text>
+<line x1="1136" y1="506" x2="1604" y2="506" stroke="#CBD5E1" stroke-width="1" />
+<text x="1136" y="526" font-size="11" font-weight="400" fill="#6B7280" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0</text>
+<text x="1604" y="170" font-size="11" font-weight="400" fill="#6B7280" text-anchor="end" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">1,000</text>
+<rect x="1152.0" y="269.01199999999994" width="97.0" height="236.98800000000003" rx="10" fill="#9CA3AF" stroke="none" stroke-width="0" />
+<text x="1200.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q8</text>
+<text x="1200.5" y="261.01199999999994" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">681</text>
+<rect x="1265.0" y="447.884" width="97.0" height="58.11600000000001" rx="10" fill="#2563EB" stroke="none" stroke-width="0" />
+<text x="1313.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q32</text>
+<text x="1313.5" y="439.884" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">167</text>
+<rect x="1378.0" y="504" width="97.0" height="2" rx="10" fill="#059669" stroke="none" stroke-width="0" />
+<text x="1426.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q64</text>
+<text x="1426.5" y="496" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0</text>
+<rect x="1491.0" y="495.212" width="97.0" height="10.788" rx="10" fill="#7C3AED" stroke="none" stroke-width="0" />
+<text x="1539.5" y="524" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q128</text>
+<text x="1539.5" y="487.212" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">31</text>
+<rect x="60" y="568" width="500" height="430" rx="18" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1" />
+<text x="78" y="596" font-size="17" font-weight="600" fill="#111827" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">avg queue wait</text>
+<line x1="76" y1="964" x2="544" y2="964" stroke="#CBD5E1" stroke-width="1" />
+<text x="76" y="984" font-size="11" font-weight="400" fill="#6B7280" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0</text>
+<text x="544" y="628" font-size="11" font-weight="400" fill="#6B7280" text-anchor="end" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.500 ms</text>
+<rect x="92.0" y="953.56" width="97.0" height="10.44" rx="10" fill="#9CA3AF" stroke="none" stroke-width="0" />
+<text x="140.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q8</text>
+<text x="140.5" y="945.56" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.015 ms</text>
+<rect x="205.0" y="944.512" width="97.0" height="19.488" rx="10" fill="#2563EB" stroke="none" stroke-width="0" />
+<text x="253.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q32</text>
+<text x="253.5" y="936.512" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.028 ms</text>
+<rect x="318.0" y="945.904" width="97.0" height="18.096" rx="10" fill="#059669" stroke="none" stroke-width="0" />
+<text x="366.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q64</text>
+<text x="366.5" y="937.904" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.026 ms</text>
+<rect x="431.0" y="697.432" width="97.0" height="266.568" rx="10" fill="#7C3AED" stroke="none" stroke-width="0" />
+<text x="479.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q128</text>
+<text x="479.5" y="689.432" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.383 ms</text>
+<rect x="590" y="568" width="500" height="430" rx="18" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1" />
+<text x="608" y="596" font-size="17" font-weight="600" fill="#111827" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">avg total response</text>
+<line x1="606" y1="964" x2="1074" y2="964" stroke="#CBD5E1" stroke-width="1" />
+<text x="606" y="984" font-size="11" font-weight="400" fill="#6B7280" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0</text>
+<text x="1074" y="628" font-size="11" font-weight="400" fill="#6B7280" text-anchor="end" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.500 ms</text>
+<rect x="622.0" y="931.288" width="97.0" height="32.712" rx="10" fill="#9CA3AF" stroke="none" stroke-width="0" />
+<text x="670.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q8</text>
+<text x="670.5" y="923.288" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.047 ms</text>
+<rect x="735.0" y="922.936" width="97.0" height="41.064" rx="10" fill="#2563EB" stroke="none" stroke-width="0" />
+<text x="783.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q32</text>
+<text x="783.5" y="914.936" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.059 ms</text>
+<rect x="848.0" y="922.936" width="97.0" height="41.064" rx="10" fill="#059669" stroke="none" stroke-width="0" />
+<text x="896.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q64</text>
+<text x="896.5" y="914.936" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.059 ms</text>
+<rect x="961.0" y="640.3599999999999" width="97.0" height="323.64000000000004" rx="10" fill="#7C3AED" stroke="none" stroke-width="0" />
+<text x="1009.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q128</text>
+<text x="1009.5" y="632.3599999999999" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.465 ms</text>
+<rect x="1120" y="568" width="500" height="430" rx="18" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1" />
+<text x="1138" y="596" font-size="17" font-weight="600" fill="#111827" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">k6 p95</text>
+<line x1="1136" y1="964" x2="1604" y2="964" stroke="#CBD5E1" stroke-width="1" />
+<text x="1136" y="984" font-size="11" font-weight="400" fill="#6B7280" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0</text>
+<text x="1604" y="628" font-size="11" font-weight="400" fill="#6B7280" text-anchor="end" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">2.000 ms</text>
+<rect x="1152.0" y="933.202" width="97.0" height="30.798" rx="10" fill="#9CA3AF" stroke="none" stroke-width="0" />
+<text x="1200.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q8</text>
+<text x="1200.5" y="925.202" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.177 ms</text>
+<rect x="1265.0" y="931.984" width="97.0" height="32.016" rx="10" fill="#2563EB" stroke="none" stroke-width="0" />
+<text x="1313.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q32</text>
+<text x="1313.5" y="923.984" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.184 ms</text>
+<rect x="1378.0" y="918.586" width="97.0" height="45.414" rx="10" fill="#059669" stroke="none" stroke-width="0" />
+<text x="1426.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q64</text>
+<text x="1426.5" y="910.586" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">0.261 ms</text>
+<rect x="1491.0" y="638.968" width="97.0" height="325.03200000000004" rx="10" fill="#7C3AED" stroke="none" stroke-width="0" />
+<text x="1539.5" y="982" font-size="12" font-weight="600" fill="#334155" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">q128</text>
+<text x="1539.5" y="630.968" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">1.868 ms</text>
+<text x="60" y="1132" font-size="13" font-weight="400" fill="#64748B" text-anchor="start" font-family="Pretendard, Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif">Source: docs/queue_size_experiment_results_20260422.md</text>
+</svg>

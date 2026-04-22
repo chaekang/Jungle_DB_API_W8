@@ -1,0 +1,47 @@
+time="2026-04-23T00:01:24+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:65432->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:24+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:65446->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:24+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:65434->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:24+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:65440->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:24+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:65431->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:24+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:65433->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:24+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:65435->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:26+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:55335->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:26+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:55329->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:26+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:55338->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:26+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:55327->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:26+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:55328->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:26+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:55332->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:01:26+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:55331->127.0.0.1:18216: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.886708/s
+    checks_succeeded...: 99.95% 29987 out of 30001
+    checks_failed......: 0.04%  14 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29987 / ✗ 14
+
+    CUSTOM
+    status_503.....................: 13     1.299908/s
+    success_duration...............: avg=0.117234 min=0.034    med=0.058    max=21.385  p(90)=0.096    p(95)=0.191   
+
+    HTTP
+    http_req_duration..............: avg=117.59µs min=16µs     med=58µs     max=21.38ms p(90)=97µs     p(95)=196µs   
+      { expected_response:true }...: avg=117.23µs min=34µs     med=58µs     max=21.38ms p(90)=96µs     p(95)=191µs   
+    http_req_failed................: 0.08%  27 out of 30001
+    http_reqs......................: 30001  2999.886708/s
+
+    EXECUTION
+    iteration_duration.............: avg=303.26µs min=108.08µs med=155.37µs max=31.38ms p(90)=244.25µs p(95)=455.29µs
+    iterations.....................: 30001  2999.886708/s
+    vus............................: 1      min=1           max=1   
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

@@ -1,0 +1,53 @@
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56710->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56709->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56719->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56718->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56707->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56714->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56713->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56706->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56701->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56708->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56717->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56716->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56715->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56700->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56712->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56711->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56705->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56703->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56702->127.0.0.1:18216: read: connection reset by peer"
+time="2026-04-23T00:05:20+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56704->127.0.0.1:18216: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.830315/s
+    checks_succeeded...: 99.93% 29981 out of 30001
+    checks_failed......: 0.06%  20 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29981 / ✗ 20
+
+    CUSTOM
+    status_503.....................: 13     1.299883/s
+    success_duration...............: avg=0.533658 min=0.287    med=0.353 max=36.863  p(90)=0.419    p(95)=0.9859  
+
+    HTTP
+    http_req_duration..............: avg=536.25µs min=8µs      med=353µs max=36.86ms p(90)=420µs    p(95)=1.01ms  
+      { expected_response:true }...: avg=533.65µs min=287µs    med=353µs max=36.86ms p(90)=419µs    p(95)=985.89µs
+    http_req_failed................: 0.10%  33 out of 30001
+    http_reqs......................: 30001  2999.830315/s
+
+    EXECUTION
+    iteration_duration.............: avg=906.07µs min=351.12µs med=498µs max=71.89ms p(90)=595.33µs p(95)=1.51ms  
+    iterations.....................: 30001  2999.830315/s
+    vus............................: 17     min=1           max=17  
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

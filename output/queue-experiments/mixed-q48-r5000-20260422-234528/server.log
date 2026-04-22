@@ -1,0 +1,20 @@
+Server listening on http://0.0.0.0:18104 (workers=8, queue=48, backlog=64, simulated_work_us=0)
+SERVER_SUMMARY_BEGIN
+worker_count=8
+queue_capacity=48
+simulated_work_us=0
+total_requests_received=50001
+total_requests_completed=49616
+total_requests_failed=385
+total_503_responses=385
+total_queue_full_events=385
+enqueue_success_count=49616
+enqueue_fail_count=385
+max_queue_length_observed=48
+average_queue_length=0.216
+average_queue_wait_ms=0.045
+average_execution_ms=0.008
+average_total_response_ms=0.077
+throughput_success_rps=4791.041
+worker_busy_ratio=0.0192
+SERVER_SUMMARY_END

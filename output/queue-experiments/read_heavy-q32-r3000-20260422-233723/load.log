@@ -1,0 +1,52 @@
+time="2026-04-22T23:37:25+09:00" level=info msg="2026/04/22 23:37:25 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:37:25+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18101/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-22T23:37:27+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:60529->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:27+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:60536->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:27+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:60535->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57262->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57261->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:57260->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58121->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58129->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58128->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58108->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58131->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58126->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58125->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58130->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58124->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58123->127.0.0.1:18101: read: connection reset by peer"
+time="2026-04-22T23:37:32+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58122->127.0.0.1:18101: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.808119/s
+    checks_succeeded...: 99.94% 29983 out of 30001
+    checks_failed......: 0.05%  18 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29983 / ✗ 18
+
+    CUSTOM
+    status_503.....................: 23     2.299776/s
+    success_duration...............: avg=0.104185 min=0.037    med=0.06  max=17.789  p(90)=0.112    p(95)=0.172   
+
+    HTTP
+    http_req_duration..............: avg=104.88µs min=0s       med=60µs  max=17.78ms p(90)=112µs    p(95)=174µs   
+      { expected_response:true }...: avg=104.18µs min=37µs     med=60µs  max=17.78ms p(90)=112µs    p(95)=172µs   
+    http_req_failed................: 0.13%  41 out of 30001
+    http_reqs......................: 30001  2999.808119/s
+
+    EXECUTION
+    iteration_duration.............: avg=249.86µs min=103.16µs med=156µs max=17.98ms p(90)=263.87µs p(95)=400.91µs
+    iterations.....................: 30001  2999.808119/s
+    vus............................: 0      min=0           max=0   
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

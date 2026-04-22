@@ -1,0 +1,48 @@
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52988->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52987->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52985->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52984->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52983->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52982->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52980->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52979->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52978->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52977->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52942->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52941->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52935->127.0.0.1:18110: read: connection reset by peer"
+time="2026-04-22T23:42:54+09:00" level=info msg="2026/04/22 23:42:54 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:42:54+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 29995  2996.068004/s
+    checks_succeeded...: 99.95% 29981 out of 29995
+    checks_failed......: 0.04%  14 out of 29995
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29981 / ✗ 14
+
+    CUSTOM
+    status_503.....................: 107    10.687757/s
+    success_duration...............: avg=0.200216 min=0.036    med=0.058    max=39.937  p(90)=0.102    p(95)=0.25035 
+
+    HTTP
+    http_req_duration..............: avg=206.63µs min=0s       med=58µs     max=39.93ms p(90)=102µs    p(95)=258.29µs
+      { expected_response:true }...: avg=200.21µs min=36µs     med=58µs     max=39.93ms p(90)=102µs    p(95)=250.34µs
+    http_req_failed................: 0.40%  121 out of 29995
+    http_reqs......................: 29995  2996.068004/s
+
+    EXECUTION
+    iteration_duration.............: avg=454.83µs min=106.08µs med=153.25µs max=72.43ms p(90)=251.27µs p(95)=762.05µs
+    iterations.....................: 29995  2996.068004/s
+    vus............................: 0      min=0            max=1   
+    vus_max........................: 1000   min=1000         max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 516 kB/s
+    data_sent......................: 5.4 MB 540 kB/s
+
+
+

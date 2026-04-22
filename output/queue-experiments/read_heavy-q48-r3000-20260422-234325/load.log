@@ -1,0 +1,36 @@
+time="2026-04-22T23:43:28+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:49276->127.0.0.1:18113: read: connection reset by peer"
+time="2026-04-22T23:43:28+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:49275->127.0.0.1:18113: read: connection reset by peer"
+time="2026-04-22T23:43:29+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52425->127.0.0.1:18113: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.811118/s
+    checks_succeeded...: 99.99% 29998 out of 30001
+    checks_failed......: 0.00%  3 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29998 / ✗ 3
+
+    CUSTOM
+    status_503.....................: 24     2.399769/s
+    success_duration...............: avg=0.1015   min=0.035    med=0.058    max=4.458   p(90)=0.1   p(95)=0.174   
+
+    HTTP
+    http_req_duration..............: avg=101.53µs min=7µs      med=58µs     max=4.45ms  p(90)=100µs p(95)=175µs   
+      { expected_response:true }...: avg=101.49µs min=35µs     med=58µs     max=4.45ms  p(90)=100µs p(95)=174µs   
+    http_req_failed................: 0.08%  27 out of 30001
+    http_reqs......................: 30001  2999.811118/s
+
+    EXECUTION
+    iteration_duration.............: avg=302.02µs min=103.95µs med=152.54µs max=59.26ms p(90)=245µs p(95)=408.25µs
+    iterations.....................: 30001  2999.811118/s
+    vus............................: 1      min=0           max=37  
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

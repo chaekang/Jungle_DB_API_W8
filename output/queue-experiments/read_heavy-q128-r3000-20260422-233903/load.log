@@ -1,0 +1,50 @@
+time="2026-04-22T23:39:11+09:00" level=info msg="2026/04/22 23:39:11 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:39:11+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-22T23:39:11+09:00" level=info msg="2026/04/22 23:39:11 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:39:11+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-22T23:39:11+09:00" level=info msg="2026/04/22 23:39:11 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:39:11+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-22T23:39:11+09:00" level=info msg="2026/04/22 23:39:11 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:39:11+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-22T23:39:12+09:00" level=info msg="2026/04/22 23:39:12 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:39:12+09:00" level=info msg="2026/04/22 23:39:12 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:39:12+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-22T23:39:12+09:00" level=info msg="2026/04/22 23:39:12 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:39:12+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-22T23:39:12+09:00" level=info msg="2026/04/22 23:39:12 Unsolicited response received on idle HTTP channel starting with \"HTTP/1.1 503 Service Unavailable\\r\\nContent-Type: application/json\\r\\nContent-Length: 43\\r\\nConnection: close\\r\\n\\r\\n{\\\"success\\\":false,\\\"error\\\":\\\"Server is busy.\\\"}\"; err=<nil>"
+time="2026-04-22T23:39:12+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+time="2026-04-22T23:39:12+09:00" level=warning msg="Request Failed" error="Post \"http://127.0.0.1:18110/query\": readLoopPeekFailLocked: %!w(<nil>)"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 28981  2897.855421/s
+    checks_succeeded...: 99.97% 28973 out of 28981
+    checks_failed......: 0.02%  8 out of 28981
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 28973 / ✗ 8
+
+    CUSTOM
+    status_503.....................: 725    72.493882/s
+    success_duration...............: avg=3.996992 min=0.035    med=0.061    max=473.716  p(90)=1.2573 p(95)=5.77415
+
+    HTTP
+    http_req_duration..............: avg=3.91ms   min=0s       med=61µs     max=473.71ms p(90)=1.21ms p(95)=5.56ms 
+      { expected_response:true }...: avg=3.99ms   min=35µs     med=61µs     max=473.71ms p(90)=1.25ms p(95)=5.77ms 
+    http_req_failed................: 2.52%  733 out of 28981
+    http_reqs......................: 28981  2897.855421/s
+
+    EXECUTION
+    dropped_iterations.............: 1020   101.991392/s
+    iteration_duration.............: avg=12.41ms  min=106.25µs med=167.79µs max=744.11ms p(90)=8.33ms p(95)=91.32ms
+    iterations.....................: 28981  2897.855421/s
+    vus............................: 0      min=0            max=291 
+    vus_max........................: 1001   min=1000         max=1001
+
+    NETWORK
+    data_received..................: 5.0 MB 498 kB/s
+    data_sent......................: 5.1 MB 511 kB/s
+
+
+

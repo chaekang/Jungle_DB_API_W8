@@ -1,0 +1,44 @@
+time="2026-04-23T00:05:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:53678->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56782->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56786->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56791->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56785->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56783->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56790->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56784->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56787->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56789->127.0.0.1:18214: read: connection reset by peer"
+time="2026-04-23T00:05:03+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:56788->127.0.0.1:18214: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.805419/s
+    checks_succeeded...: 99.96% 29990 out of 30001
+    checks_failed......: 0.03%  11 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29990 / ✗ 11
+
+    CUSTOM
+    status_503.....................: 12     1.199882/s
+    success_duration...............: avg=0.201225 min=0.134    med=0.16     max=19.553  p(90)=0.181   p(95)=0.234   
+
+    HTTP
+    http_req_duration..............: avg=201.3µs  min=6µs      med=160µs    max=19.55ms p(90)=181µs   p(95)=235µs   
+      { expected_response:true }...: avg=201.22µs min=134µs    med=160µs    max=19.55ms p(90)=181µs   p(95)=234µs   
+    http_req_failed................: 0.07%  23 out of 30001
+    http_reqs......................: 30001  2999.805419/s
+
+    EXECUTION
+    iteration_duration.............: avg=352.83µs min=204.37µs med=251.66µs max=31.58ms p(90)=297.7µs p(95)=433.87µs
+    iterations.....................: 30001  2999.805419/s
+    vus............................: 1      min=1           max=9   
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

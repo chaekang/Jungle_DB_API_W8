@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<rect x="0.0" y="0.0" width="1600.0" height="900.0" fill="#f8fafc" stroke="none" stroke-width="0" rx="0" />
+<text x="56.0" y="70.0" font-family="Helvetica, Arial, sans-serif" font-size="42" font-weight="700" fill="#0f172a" text-anchor="start">Mixed Workload</text>
+<text x="56.0" y="108.0" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="400" fill="#475569" text-anchor="start">This is the slide that supports choosing 4 workers instead of just increasing the count.</text>
+<rect x="56.0" y="150.0" width="480.0" height="520.0" fill="#ffffff" stroke="#dbe2ea" stroke-width="1" rx="18" />
+<text x="80.0" y="188.0" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a" text-anchor="start">throughput (rps)</text>
+<text x="80.0" y="216.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#475569" text-anchor="start">higher is better</text>
+<line x1="128.0" y1="592.0" x2="512.0" y2="592.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="597.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0.000</text>
+<line x1="128.0" y1="506.0" x2="512.0" y2="506.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="511.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">828</text>
+<line x1="128.0" y1="420.0" x2="512.0" y2="420.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="425.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">1656</text>
+<line x1="128.0" y1="334.0" x2="512.0" y2="334.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="339.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">2484</text>
+<line x1="128.0" y1="248.0" x2="512.0" y2="248.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">3312</text>
+<line x1="128.0" y1="592.0" x2="512.0" y2="592.0" stroke="#94a3b8" stroke-width="2" />
+<rect x="148.2" y="299.7" width="55.7" height="292.3" fill="#2563eb" stroke="none" stroke-width="0" rx="10" />
+<text x="176.0" y="289.7" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2814</text>
+<text x="176.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">1</text>
+<rect x="244.2" y="295.7" width="55.7" height="296.3" fill="#2563eb" stroke="none" stroke-width="0" rx="10" />
+<text x="272.0" y="285.7" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2853</text>
+<text x="272.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">2</text>
+<rect x="340.2" y="292.9" width="55.7" height="299.1" fill="#dc2626" stroke="none" stroke-width="0" rx="10" />
+<text x="368.0" y="282.9" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2880</text>
+<text x="368.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">4</text>
+<rect x="436.2" y="305.0" width="55.7" height="287.0" fill="#2563eb" stroke="none" stroke-width="0" rx="10" />
+<text x="464.0" y="295.0" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2763</text>
+<text x="464.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">8</text>
+<rect x="560.0" y="150.0" width="480.0" height="520.0" fill="#ffffff" stroke="#dbe2ea" stroke-width="1" rx="18" />
+<text x="584.0" y="188.0" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a" text-anchor="start">p95 success (ms)</text>
+<text x="584.0" y="216.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#475569" text-anchor="start">lower is better</text>
+<line x1="632.0" y1="592.0" x2="1016.0" y2="592.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="622.0" y="597.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0.000</text>
+<line x1="632.0" y1="506.0" x2="1016.0" y2="506.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="622.0" y="511.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">1.032</text>
+<line x1="632.0" y1="420.0" x2="1016.0" y2="420.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="622.0" y="425.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">2.063</text>
+<line x1="632.0" y1="334.0" x2="1016.0" y2="334.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="622.0" y="339.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">3.095</text>
+<line x1="632.0" y1="248.0" x2="1016.0" y2="248.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="622.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">4.126</text>
+<line x1="632.0" y1="592.0" x2="1016.0" y2="592.0" stroke="#94a3b8" stroke-width="2" />
+<rect x="652.2" y="425.4" width="55.7" height="166.6" fill="#7c3aed" stroke="none" stroke-width="0" rx="10" />
+<text x="680.0" y="415.4" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">1.998</text>
+<text x="680.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">1</text>
+<rect x="748.2" y="472.7" width="55.7" height="119.3" fill="#7c3aed" stroke="none" stroke-width="0" rx="10" />
+<text x="776.0" y="462.7" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">1.431</text>
+<text x="776.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">2</text>
+<rect x="844.2" y="524.6" width="55.7" height="67.4" fill="#7c3aed" stroke="none" stroke-width="0" rx="10" />
+<text x="872.0" y="514.6" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">0.809</text>
+<text x="872.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">4</text>
+<rect x="940.2" y="292.9" width="55.7" height="299.1" fill="#dc2626" stroke="none" stroke-width="0" rx="10" />
+<text x="968.0" y="282.9" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">3.588</text>
+<text x="968.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">8</text>
+<rect x="1064.0" y="150.0" width="480.0" height="520.0" fill="#ffffff" stroke="#dbe2ea" stroke-width="1" rx="18" />
+<text x="1088.0" y="188.0" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a" text-anchor="start">503</text>
+<text x="1088.0" y="216.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#475569" text-anchor="start">lower is better</text>
+<line x1="1136.0" y1="592.0" x2="1520.0" y2="592.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="1126.0" y="597.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0</text>
+<line x1="1136.0" y1="506.0" x2="1520.0" y2="506.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="1126.0" y="511.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">886</text>
+<line x1="1136.0" y1="420.0" x2="1520.0" y2="420.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="1126.0" y="425.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">1772</text>
+<line x1="1136.0" y1="334.0" x2="1520.0" y2="334.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="1126.0" y="339.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">2658</text>
+<line x1="1136.0" y1="248.0" x2="1520.0" y2="248.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="1126.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">3544</text>
+<line x1="1136.0" y1="592.0" x2="1520.0" y2="592.0" stroke="#94a3b8" stroke-width="2" />
+<rect x="1156.2" y="329.5" width="55.7" height="262.5" fill="#ea580c" stroke="none" stroke-width="0" rx="10" />
+<text x="1184.0" y="319.5" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2705</text>
+<text x="1184.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">1</text>
+<rect x="1252.2" y="428.7" width="55.7" height="163.3" fill="#ea580c" stroke="none" stroke-width="0" rx="10" />
+<text x="1280.0" y="418.7" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">1682</text>
+<text x="1280.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">2</text>
+<rect x="1348.2" y="477.8" width="55.7" height="114.2" fill="#ea580c" stroke="none" stroke-width="0" rx="10" />
+<text x="1376.0" y="467.8" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">1177</text>
+<text x="1376.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">4</text>
+<rect x="1444.2" y="292.9" width="55.7" height="299.1" fill="#dc2626" stroke="none" stroke-width="0" rx="10" />
+<text x="1472.0" y="282.9" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">3082</text>
+<text x="1472.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">8</text>
+<rect x="56.0" y="710.0" width="1488.0" height="138.0" fill="#fffaf5" stroke="#059669" stroke-width="2" rx="20" />
+<text x="80.0" y="750.0" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a" text-anchor="start">Presentation Point</text>
+<text x="80.0" y="792.0" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#475569" text-anchor="start">Mixed workload has a sweet spot at 4 workers: best throughput, best p95, and the fewest 503s.</text>
+<text x="80.0" y="824.0" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#475569" text-anchor="start">Going from 4 to 8 workers makes the server worse again, which suggests contention and scheduling overhead.</text>
+</svg>

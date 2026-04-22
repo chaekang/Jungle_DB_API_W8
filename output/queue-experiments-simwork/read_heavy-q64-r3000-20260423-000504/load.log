@@ -1,0 +1,32 @@
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001   2999.816217/s
+    checks_succeeded...: 100.00% 30001 out of 30001
+    checks_failed......: 0.00%   0 out of 30001
+
+    ✓ status is 200 or 503
+
+    CUSTOM
+    status_503.....................: 9      0.899915/s
+    success_duration...............: avg=0.731388 min=0.538 med=0.562    max=34.968  p(90)=0.62     p(95)=1.1009
+
+    HTTP
+    http_req_duration..............: avg=731.17µs min=7µs   med=562µs    max=34.96ms p(90)=620µs    p(95)=1.1ms 
+      { expected_response:true }...: avg=731.38µs min=538µs med=562µs    max=34.96ms p(90)=620µs    p(95)=1.1ms 
+    http_req_failed................: 0.02%  9 out of 30001
+    http_reqs......................: 30001  2999.816217/s
+
+    EXECUTION
+    iteration_duration.............: avg=912.75µs min=250µs med=655.95µs max=42.93ms p(90)=783.95µs p(95)=1.42ms
+    iterations.....................: 30001  2999.816217/s
+    vus............................: 2      min=2          max=2   
+    vus_max........................: 1000   min=1000       max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

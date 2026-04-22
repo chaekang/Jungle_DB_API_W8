@@ -1,0 +1,41 @@
+time="2026-04-23T00:01:12+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59341->127.0.0.1:18215: read: connection reset by peer"
+time="2026-04-23T00:01:12+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59335->127.0.0.1:18215: read: connection reset by peer"
+time="2026-04-23T00:01:12+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59336->127.0.0.1:18215: read: connection reset by peer"
+time="2026-04-23T00:01:12+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59342->127.0.0.1:18215: read: connection reset by peer"
+time="2026-04-23T00:01:12+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59339->127.0.0.1:18215: read: connection reset by peer"
+time="2026-04-23T00:01:12+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59340->127.0.0.1:18215: read: connection reset by peer"
+time="2026-04-23T00:01:12+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59337->127.0.0.1:18215: read: connection reset by peer"
+time="2026-04-23T00:01:12+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:59338->127.0.0.1:18215: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.625759/s
+    checks_succeeded...: 99.97% 29993 out of 30001
+    checks_failed......: 0.02%  8 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29993 / ✗ 8
+
+    CUSTOM
+    status_503.....................: 11     1.099826/s
+    success_duration...............: avg=0.687165 min=0.537    med=0.561    max=21.169  p(90)=0.617    p(95)=0.886 
+
+    HTTP
+    http_req_duration..............: avg=686.97µs min=13µs     med=561µs    max=21.16ms p(90)=617µs    p(95)=886µs 
+      { expected_response:true }...: avg=687.16µs min=537µs    med=561µs    max=21.16ms p(90)=617µs    p(95)=886µs 
+    http_req_failed................: 0.06%  19 out of 30001
+    http_reqs......................: 30001  2999.625759/s
+
+    EXECUTION
+    iteration_duration.............: avg=859.42µs min=383.75µs med=655.75µs max=25.95ms p(90)=782.54µs p(95)=1.22ms
+    iterations.....................: 30001  2999.625759/s
+    vus............................: 1      min=1           max=3   
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

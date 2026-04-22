@@ -1,0 +1,40 @@
+time="2026-04-22T23:58:58+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52327->127.0.0.1:18204: read: connection reset by peer"
+time="2026-04-22T23:58:58+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52326->127.0.0.1:18204: read: connection reset by peer"
+time="2026-04-22T23:58:58+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52324->127.0.0.1:18204: read: connection reset by peer"
+time="2026-04-22T23:58:58+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52330->127.0.0.1:18204: read: connection reset by peer"
+time="2026-04-22T23:58:58+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:52331->127.0.0.1:18204: read: connection reset by peer"
+time="2026-04-22T23:59:00+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:58609->127.0.0.1:18204: read: connection reset by peer"
+time="2026-04-22T23:59:02+09:00" level=warning msg="Request Failed" error="read tcp 127.0.0.1:64872->127.0.0.1:18204: read: connection reset by peer"
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 30001  2999.860311/s
+    checks_succeeded...: 99.97% 29994 out of 30001
+    checks_failed......: 0.02%  7 out of 30001
+
+    ✗ status is 200 or 503
+      ↳  99% — ✓ 29994 / ✗ 7
+
+    CUSTOM
+    status_503.....................: 43     4.299656/s
+    success_duration...............: avg=0.101438 min=0.037    med=0.058    max=28.579  p(90)=0.099    p(95)=0.177   
+
+    HTTP
+    http_req_duration..............: avg=101.67µs min=8µs      med=58µs     max=28.57ms p(90)=99µs     p(95)=181µs   
+      { expected_response:true }...: avg=101.43µs min=37µs     med=58µs     max=28.57ms p(90)=99µs     p(95)=177µs   
+    http_req_failed................: 0.16%  50 out of 30001
+    http_reqs......................: 30001  2999.860311/s
+
+    EXECUTION
+    iteration_duration.............: avg=276.55µs min=107.91µs med=154.33µs max=30.2ms  p(90)=246.16µs p(95)=411.08µs
+    iterations.....................: 30001  2999.860311/s
+    vus............................: 0      min=0           max=8   
+    vus_max........................: 1000   min=1000        max=1000
+
+    NETWORK
+    data_received..................: 5.2 MB 517 kB/s
+    data_sent......................: 5.4 MB 542 kB/s
+
+
+

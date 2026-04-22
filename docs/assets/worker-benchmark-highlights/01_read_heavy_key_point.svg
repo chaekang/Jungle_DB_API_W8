@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+<rect x="0.0" y="0.0" width="1600.0" height="900.0" fill="#f8fafc" stroke="none" stroke-width="0" rx="0" />
+<text x="56.0" y="70.0" font-family="Helvetica, Arial, sans-serif" font-size="42" font-weight="700" fill="#0f172a" text-anchor="start">Read-heavy Baseline</text>
+<text x="56.0" y="108.0" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="400" fill="#475569" text-anchor="start">Single worker is already enough for the current id-index read path.</text>
+<rect x="56.0" y="150.0" width="720.0" height="520.0" fill="#ffffff" stroke="#dbe2ea" stroke-width="1" rx="18" />
+<text x="80.0" y="188.0" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a" text-anchor="start">throughput (rps)</text>
+<text x="80.0" y="216.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#475569" text-anchor="start">higher is better</text>
+<line x1="128.0" y1="592.0" x2="752.0" y2="592.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="597.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0.000</text>
+<line x1="128.0" y1="506.0" x2="752.0" y2="506.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="511.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">832</text>
+<line x1="128.0" y1="420.0" x2="752.0" y2="420.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="425.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">1664</text>
+<line x1="128.0" y1="334.0" x2="752.0" y2="334.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="339.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">2497</text>
+<line x1="128.0" y1="248.0" x2="752.0" y2="248.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="118.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">3329</text>
+<line x1="128.0" y1="592.0" x2="752.0" y2="592.0" stroke="#94a3b8" stroke-width="2" />
+<rect x="171.0" y="295.4" width="70.0" height="296.6" fill="#2563eb" stroke="none" stroke-width="0" rx="10" />
+<text x="206.0" y="285.4" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2871</text>
+<text x="206.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">1</text>
+<rect x="327.0" y="292.9" width="70.0" height="299.1" fill="#dc2626" stroke="none" stroke-width="0" rx="10" />
+<text x="362.0" y="282.9" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2895</text>
+<text x="362.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">2</text>
+<rect x="483.0" y="315.7" width="70.0" height="276.3" fill="#2563eb" stroke="none" stroke-width="0" rx="10" />
+<text x="518.0" y="305.7" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2674</text>
+<text x="518.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">4</text>
+<rect x="639.0" y="297.2" width="70.0" height="294.8" fill="#2563eb" stroke="none" stroke-width="0" rx="10" />
+<text x="674.0" y="287.2" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">2853</text>
+<text x="674.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">8</text>
+<rect x="824.0" y="150.0" width="720.0" height="520.0" fill="#ffffff" stroke="#dbe2ea" stroke-width="1" rx="18" />
+<text x="848.0" y="188.0" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a" text-anchor="start">avg response (ms)</text>
+<text x="848.0" y="216.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="400" fill="#475569" text-anchor="start">lower is better</text>
+<line x1="896.0" y1="592.0" x2="1520.0" y2="592.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="886.0" y="597.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0.000</text>
+<line x1="896.0" y1="506.0" x2="1520.0" y2="506.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="886.0" y="511.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0.030</text>
+<line x1="896.0" y1="420.0" x2="1520.0" y2="420.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="886.0" y="425.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0.061</text>
+<line x1="896.0" y1="334.0" x2="1520.0" y2="334.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="886.0" y="339.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0.091</text>
+<line x1="896.0" y1="248.0" x2="1520.0" y2="248.0" stroke="#dbe2ea" stroke-width="1" />
+<text x="886.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="end">0.122</text>
+<line x1="896.0" y1="592.0" x2="1520.0" y2="592.0" stroke="#94a3b8" stroke-width="2" />
+<rect x="939.0" y="292.9" width="70.0" height="299.1" fill="#dc2626" stroke="none" stroke-width="0" rx="10" />
+<text x="974.0" y="282.9" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">0.106</text>
+<text x="974.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">1</text>
+<rect x="1095.0" y="459.4" width="70.0" height="132.6" fill="#ea580c" stroke="none" stroke-width="0" rx="10" />
+<text x="1130.0" y="449.4" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">0.047</text>
+<text x="1130.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">2</text>
+<rect x="1251.0" y="456.5" width="70.0" height="135.5" fill="#ea580c" stroke="none" stroke-width="0" rx="10" />
+<text x="1286.0" y="446.5" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">0.048</text>
+<text x="1286.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">4</text>
+<rect x="1407.0" y="459.4" width="70.0" height="132.6" fill="#ea580c" stroke="none" stroke-width="0" rx="10" />
+<text x="1442.0" y="449.4" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0f172a" text-anchor="middle">0.047</text>
+<text x="1442.0" y="620.0" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#475569" text-anchor="middle">8</text>
+<rect x="56.0" y="710.0" width="1488.0" height="138.0" fill="#fffaf5" stroke="#2563eb" stroke-width="2" rx="20" />
+<text x="80.0" y="750.0" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0f172a" text-anchor="start">Presentation Point</text>
+<text x="80.0" y="792.0" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#475569" text-anchor="start">read-heavy baseline does not meaningfully scale with more workers. Peak throughput gain is only +0.8%.</text>
+<text x="80.0" y="824.0" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="400" fill="#475569" text-anchor="start">The main effect of multi-worker here is modest latency stabilization, not a real throughput jump.</text>
+</svg>
