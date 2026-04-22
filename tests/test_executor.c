@@ -14,6 +14,16 @@ static int assert_true(int condition, const char *message) {
     return SUCCESS;
 }
 
+static int run_and_discard_result(const SqlStatement *statement) {
+    QueryResult result;
+    int status;
+
+    query_result_init(&result);
+    status = executor_execute(statement, &result);
+    query_result_free(&result);
+    return status;
+}
+
 static void prepare_insert(SqlStatement *statement, const char *table_name,
                            int include_id, const char *id,
                            const char *name, const char *age) {
@@ -86,13 +96,13 @@ int main(void) {
     orders_handle.entry = NULL;
 
     prepare_insert(&statement, "executor_users", 0, "", "Alice", "30");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
+    if (assert_true(run_and_discard_result(&statement) == SUCCESS,
                     "executor should insert first row into executor_users") != SUCCESS) {
         return EXIT_FAILURE;
     }
 
     prepare_insert(&statement, "executor_users", 0, "", "Bob", "25");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
+    if (assert_true(run_and_discard_result(&statement) == SUCCESS,
                     "executor should insert second row into executor_users") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
@@ -118,7 +128,7 @@ int main(void) {
     table_runtime_release(&users_handle);
 
     prepare_insert(&statement, "executor_orders", 0, "", "Order-1", "10");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
+    if (assert_true(run_and_discard_result(&statement) == SUCCESS,
                     "executor should insert into executor_orders independently") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
@@ -144,30 +154,30 @@ int main(void) {
     table_runtime_release(&orders_handle);
 
     prepare_select(&statement, "executor_users", "name", "id", "=", "2");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
+    if (assert_true(run_and_discard_result(&statement) == SUCCESS,
                     "executor should use id index for executor_users id equality select") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
 
     prepare_select(&statement, "executor_users", "name", "age", ">=", "27");
-    if (assert_true(executor_execute(&statement) == SUCCESS,
+    if (assert_true(run_and_discard_result(&statement) == SUCCESS,
                     "executor should use linear scan for non-id select") != SUCCESS ||
-        assert_true(executor_execute(&statement) == SUCCESS,
+        assert_true(run_and_discard_result(&statement) == SUCCESS,
                     "repeated select should stay stable after other table activity") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
 
     prepare_insert(&statement, "executor_users", 1, "7", "Charlie", "35");
-    if (assert_true(executor_execute(&statement) == FAILURE,
+    if (assert_true(run_and_discard_result(&statement) == FAILURE,
                     "executor should reject explicit id inserts") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;
     }
 
     prepare_delete(&statement, "executor_users", "Bob");
-    if (assert_true(executor_execute(&statement) == FAILURE,
+    if (assert_true(run_and_discard_result(&statement) == FAILURE,
                     "executor should reject delete in memory runtime mode") != SUCCESS) {
         table_runtime_cleanup();
         return EXIT_FAILURE;

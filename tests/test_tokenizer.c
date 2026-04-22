@@ -64,20 +64,20 @@ int main(void) {
     }
     free(tokens);
 
-    if (assert_true(tokenizer_get_cache_entry_count() == 3,
-                    "three unique statements should be cached") != SUCCESS ||
+    if (assert_true(tokenizer_get_cache_entry_count() == 0,
+                    "tokenizer should not keep a global cache") != SUCCESS ||
         assert_true(tokenizer_get_cache_hit_count() == 0,
-                    "cache hit count should still be zero before reuse") != SUCCESS) {
+                    "cache hit count should stay zero without cache") != SUCCESS) {
         tokenizer_cleanup_cache();
         return EXIT_FAILURE;
     }
 
     tokens = tokenizer_tokenize("Select * FROM users WHERE age >= 27;", &token_count);
-    if (assert_true(tokens != NULL, "cached parse should still return tokens") != SUCCESS ||
-        assert_true(tokenizer_get_cache_entry_count() == 3,
-                    "cache size should stay stable on repeated SQL") != SUCCESS ||
-        assert_true(tokenizer_get_cache_hit_count() == 1,
-                    "repeated SQL should produce a cache hit") != SUCCESS) {
+    if (assert_true(tokens != NULL, "repeated parse should still return tokens") != SUCCESS ||
+        assert_true(tokenizer_get_cache_entry_count() == 0,
+                    "cache size should remain zero on repeated SQL") != SUCCESS ||
+        assert_true(tokenizer_get_cache_hit_count() == 0,
+                    "repeated SQL should not touch cache hit count") != SUCCESS) {
         free(tokens);
         tokenizer_cleanup_cache();
         return EXIT_FAILURE;
