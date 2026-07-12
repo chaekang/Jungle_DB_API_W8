@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+    image: jungle-db-api:latest
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8080}:8080"
+    volumes:
+      - db-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cpus: "0.50"
+    mem_limit: 256m
+    stop_grace_period: 10s
+
+  test:
+    profiles:
+      - test
+    build:
+      context: .
+      target: test
+    command: make tests
+    working_dir: /src
+
+volumes:
+  db-data:

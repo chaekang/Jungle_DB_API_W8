@@ -1,0 +1,20 @@
+{
+  "name": "jungle-db-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "C99 mini DBMS HTTP API server with Docker deployment scripts.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "local:build": "make",
+    "local:test": "make tests",
+    "local:clean": "make clean",
+    "local:start": "./sql_processor --server 8080",
+    "docker:build": "docker build -t jungle-db-api:latest .",
+    "docker:deploy": "docker compose up -d --build api",
+    "docker:up": "docker compose up -d api",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f api",
+    "docker:test": "docker compose --profile test run --rm test",
+    "docker:clean": "docker compose down --volumes --remove-orphans"
+  }
+}

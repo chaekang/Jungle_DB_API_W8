@@ -1,4 +1,14 @@
 build
+cmake-build-debug
 sql_processor
+sql_processor.exe
 data/*.csv
 .git
+.github
+output
+server.*.log
+*.log
+__pycache__
+*.pyc
+node_modules
+npm-debug.log

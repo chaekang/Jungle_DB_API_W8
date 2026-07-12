@@ -1,84 +1,202 @@
-# 멀티스레드 SQL API 서버
+# Jungle DB API
 
-이 프로젝트는 C로 구현한 멀티스레드 SQL API 서버입니다.  
+C99로 구현한 미니 DBMS HTTP API 서버입니다. `POST /query` 하나의 엔드포인트로 SQL을 받아 메모리 기반 테이블 런타임에서 실행하고, 필요한 데이터는 `data/*.csv`로 저장합니다.
 
-## 프로젝트 한눈에 보기
+이 저장소는 비싼 관리형 DB 없이 Docker 컨테이너 하나로 배포할 수 있게 구성되어 있습니다. 작은 VPS, 개인 서버, 수업용 클라우드 VM에서 낮은 비용으로 운영하는 것을 기본값으로 잡았습니다.
 
-- 메인 스레드는 연결을 받고 `bounded queue`에 넣습니다.
-- 워커 스레드는 큐에서 요청을 꺼내 HTTP 파싱, SQL 실행, 응답 전송까지 끝까지 처리합니다.
-- 큐가 가득 차면 요청을 오래 붙잡지 않고 `503 Service Unavailable`로 빠르게 실패시킵니다.
-- 저장 엔진은 테이블 단위 `pthread_rwlock_t`를 사용해 동시성을 제어합니다.
+## 주요 기능
 
-```mermaid
-flowchart LR
-    A["client"] --> B["accept (main thread)"]
-    B --> C{"queue full?"}
-    C -->|yes| D["503 response"]
-    C -->|no| E["bounded queue"]
-    E --> F["worker thread"]
-    F --> G["HTTP parse"]
-    G --> H["SQL execute"]
-    H --> I["send response"]
+- `INSERT`, `SELECT`, 단일 `WHERE` 조건 일부 구문 지원
+- `POST /query` JSON API 제공
+- worker thread + bounded queue 기반 동시 요청 처리
+- 테이블 단위 `pthread_rwlock_t`로 읽기/쓰기 동시성 제어
+- `data/` 볼륨을 통한 CSV 데이터 영속화
+- Docker healthcheck, non-root 실행, 낮은 리소스 제한 포함
+
+## 빠른 실행
+
+### Docker Compose
+
+```bash
+docker compose up -d --build api
 ```
 
-## 1. worker 스레드와 bounded queue 크기 설정
+기본 포트는 `8080`입니다.
 
+```bash
+curl -X POST http://localhost:8080/query \
+  -H "Content-Type: application/json" \
+  --data-binary @- <<'JSON'
+{"sql":"INSERT INTO users (name, age) VALUES ('Alice', 30);"}
+JSON
+```
 
-<img width="1600" height="900" alt="01_mixed_worker_story" src="https://github.com/user-attachments/assets/a19c5932-eeda-41dc-956c-3ac860a60e0e" />
+```bash
+curl -X POST http://localhost:8080/query \
+  -H "Content-Type: application/json" \
+  -d '{"sql":"SELECT * FROM users;"}'
+```
 
-<img width="1600" height="900" alt="02_read_vs_heavy_story" src="https://github.com/user-attachments/assets/7714bb51-2913-42fa-be3f-379dceac72a4" />
+응답 예시는 다음과 같습니다.
 
+```json
+{
+  "success": true,
+  "columns": ["id", "name", "age"],
+  "rows": [["1", "Alice", "30"]]
+}
+```
 
-## 2. worker 스레드의 책임 범위
-<img width="1400" height="360" alt="worker_cycle_compact" src="https://github.com/user-attachments/assets/1445120b-54e4-4afd-ba74-cb40e67237f9" />
+다른 호스트 포트를 쓰고 싶으면 `API_PORT`를 지정합니다.
 
+```bash
+API_PORT=18080 docker compose up -d --build api
+```
 
+### npm 스크립트
 
-## 3. 중간 상태 노출 문제
-<img width="1672" height="941" alt="image" src="https://github.com/user-attachments/assets/daeefd9a-0e23-428c-9e5c-fbfc545551fc" />
+Node 앱은 아니지만, 팀원이 같은 명령을 쓰기 쉽도록 `package.json`에 실행 스크립트를 넣었습니다.
 
+```bash
+npm run docker:up
+npm run docker:logs
+npm run docker:down
+npm run docker:test
+```
 
-## 4. 실행 방법
+새 이미지까지 다시 빌드해서 배포할 때는 다음 명령을 사용합니다.
 
-### 빌드
+```bash
+npm run docker:deploy
+```
+
+## 배포 방법
+
+가장 저렴하고 단순한 운영 방식은 Docker가 설치된 작은 VM 한 대에 올리는 것입니다. 별도 DB 서버가 필요 없고, 데이터는 Docker volume인 `db-data`에 저장됩니다.
+
+```bash
+git clone <your-repository-url>
+cd Jungle_DB_API_W8
+docker compose up -d --build api
+docker compose logs -f api
+```
+
+운영 기본값은 다음과 같습니다.
+
+| 항목 | 기본값 |
+| --- | --- |
+| 컨테이너 포트 | `8080` |
+| 호스트 포트 | `${API_PORT:-8080}` |
+| CPU 제한 | `0.50` |
+| 메모리 제한 | `256m` |
+| 재시작 정책 | `unless-stopped` |
+| 데이터 볼륨 | `db-data:/app/data` |
+
+세부 운영값은 [docker-compose.yml](./docker-compose.yml)을 기준으로 관리합니다.
+
+HTTPS와 도메인이 필요하면 이 컨테이너 앞에 Caddy, Nginx Proxy Manager, Cloudflare Tunnel 같은 얇은 프록시를 붙이면 됩니다. API 서버 자체는 내부 포트 `8080`만 열어두는 구성이 가장 단순합니다.
+
+## 로컬 개발
+
+Linux 또는 WSL 환경에서 빌드합니다.
 
 ```bash
 make
+./sql_processor --server 8080
 ```
 
-### 테스트
+`package.json`을 사용할 경우 로컬 명령은 Linux/WSL 기준의 `local:*` 스크립트로 분리되어 있습니다.
+
+```bash
+npm run local:build
+npm run local:test
+npm run local:start
+```
+
+테스트는 다음 명령으로 실행합니다.
 
 ```bash
 make tests
 ```
 
-### 서버 실행 예시
+Docker 안에서 테스트하려면 다음을 사용합니다.
 
 ```bash
-./sql_processor --server 8080
+docker compose --profile test run --rm test
 ```
 
-실험 스크립트와 결과 정리 도구는 아래 경로에 있습니다.
+정리 명령은 다음과 같습니다.
 
-- `scripts/run_queue_experiment.sh`
-- `scripts/run_queue_clean_campaign.py`
-- `scripts/run_queue_simwork_campaign.py`
-- `scripts/summarize_queue_results.py`
-- `scripts/summarize_queue_simwork_results.py`
+```bash
+make clean
+docker compose down --volumes --remove-orphans
+```
 
-## 5. 저장소에서 보면 좋은 파일
+## API
 
-- `src/server.c`: accept, bounded queue, worker thread, overload 처리의 핵심 구현
-- `src/table_runtime.c`: 테이블 단위 `pthread_rwlock_t` 기반 동시성 제어
-- `docs/worker_benchmark_comparison.md`: worker 수 비교 실험 정리
-- `docs/queue_size_experiment_results_20260422.md`: queue 크기 실험 결과
-- `docs/queue_size_simulated_work_results_20260422.md`: simulated work를 추가한 queue 실험 결과
+### `POST /query`
 
-## 마무리
+요청 body는 JSON이며 `sql` 문자열 필드가 필요합니다.
 
-이번 프로젝트에서 가장 중요했던 배움은 두 가지였습니다.
+```json
+{
+  "sql": "SELECT * FROM users;"
+}
+```
 
-- 서버 설정값은 감으로 정하는 것이 아니라 workload를 기준으로 실험해 정해야 한다.
-- 더 복잡한 구조가 항상 더 좋은 구조는 아니며, 현재 범위에서 설명 가능하고 유지 가능한 단순함이 더 중요할 수 있다.
+성공 응답은 메시지 또는 테이블 형태로 내려옵니다.
 
-그래서 우리는 `worker/queue`를 실험으로 조정했고, 최종적으로는 워커 하나가 요청 하나를 끝까지 책임지는 단순한 구조를 선택했습니다.
+```json
+{
+  "success": true,
+  "message": "1 row inserted into users."
+}
+```
+
+```json
+{
+  "success": true,
+  "columns": ["id", "name", "age"],
+  "rows": [["1", "Alice", "30"]]
+}
+```
+
+에러 응답은 다음 형식입니다.
+
+```json
+{
+  "success": false,
+  "error": "Table 'users' not found."
+}
+```
+
+## 지원 SQL 예시
+
+```sql
+INSERT INTO users (name, age) VALUES ('Alice', 30);
+INSERT INTO users (name, age) VALUES ('Bob', 25);
+SELECT * FROM users;
+SELECT name, age FROM users WHERE age > 27;
+SELECT * FROM users WHERE name = 'Bob';
+```
+
+`DELETE`는 parser 단계에서는 인식하지만, 현재 메모리 런타임 실행 모드에서는 지원하지 않습니다.
+
+## 프로젝트 구조
+
+```text
+src/                 C 소스 코드
+tests/               단위/통합 테스트
+loadtest/k6/         k6 부하 테스트 스크립트
+docs/                설계, 실험, 발표용 문서
+data/                런타임 CSV 데이터 저장 위치
+Dockerfile           멀티스테이지 배포 이미지
+docker-compose.yml   로컬/서버 배포 구성
+package.json         공통 실행 스크립트
+```
+
+## 운영 메모
+
+- Docker healthcheck는 컨테이너의 메인 서버 프로세스가 살아 있는지 확인합니다. HTTP 레벨 readiness가 필요하면 서버에 별도 `/healthz` 엔드포인트를 추가하는 것이 좋습니다.
+- Compose의 `read_only: true` 때문에 컨테이너 루트 파일시스템은 읽기 전용이고, 데이터는 `/app/data` 볼륨에만 기록됩니다.
+- 현재 worker 수와 queue 크기는 코드 상수로 고정되어 있습니다. 트래픽이 늘면 `src/server.c`의 `SERVER_WORKER_COUNT`, `SERVER_QUEUE_CAPACITY`를 조정한 뒤 다시 빌드하세요.
